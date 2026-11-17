@@ -1,4 +1,4 @@
-// Reads and validates environment variables (be/.env). The server refuses to start on invalid config.
+// Reads and validates environment variables (backend/.env). The server refuses to start on invalid config.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -40,7 +40,7 @@ function loadConfig() {
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
     // Never print values: some of them are secrets.
-    console.error(`Invalid configuration in be/.env:\n${problems}`);
+    console.error(`Invalid configuration in backend/.env:\n${problems}`);
     process.exit(1);
   }
   const env = parsed.data;
@@ -60,7 +60,7 @@ function loadConfig() {
   }
   if (!looksLikeEmail(env.EMAIL_REPLY_TO)) emailProblems.push("  - EMAIL_REPLY_TO: not a valid email address");
   if (emailProblems.length > 0) {
-    console.error(`Invalid email configuration in be/.env:\n${emailProblems.join("\n")}`);
+    console.error(`Invalid email configuration in backend/.env:\n${emailProblems.join("\n")}`);
     process.exit(1);
   }
   // With the MOCK provider nothing is really sent, so test mode without a recipient simply has no effect (P0-6).

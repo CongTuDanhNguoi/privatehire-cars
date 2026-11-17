@@ -1,18 +1,18 @@
-# be/ — PrivateHire Cars API
+# backend/ — PrivateHire Cars API
 
-Backend dùng chung cho **app Customer** (thư mục gốc repo) và **Staff Portal** (`web/`).
+Backend dùng chung cho **app Customer** (`app/`) và **Staff Portal** (`web/`).
 Node.js + Express 5 + TypeScript (chạy bằng `tsx`) + MySQL 8.
 
 > Kế hoạch đầy đủ: [`../docs/STAFF_PORTAL_PLAN.md`](../docs/STAFF_PORTAL_PLAN.md). Trạng thái: **hoàn thành** (Phase 1–8).
 > Cách chạy cả hệ thống bằng Docker: [`../README.md`](../README.md#2-chạy-bằng-docker-khuyên-dùng).
-> Trong Docker, thay `npm run <lệnh>` bằng `docker compose exec be npm run <lệnh>` (ví dụ `db:reset`, `smoke`).
+> Trong Docker, thay `npm run <lệnh>` bằng `docker compose exec backend npm run <lệnh>` (ví dụ `db:reset`, `smoke`).
 
 ## 1. Cài đặt
 
 Yêu cầu: Node.js ≥ 20.19, MySQL 8 đang chạy.
 
 ```bash
-cd be
+cd backend
 npm install
 cp .env.example .env      # rồi điền DB_PASSWORD và JWT_SECRET (chuỗi ngẫu nhiên ≥ 32 ký tự)
 npm run db:reset          # tạo database "privatehire" + bảng + dữ liệu mẫu
@@ -44,7 +44,7 @@ Tạo `JWT_SECRET` ngẫu nhiên: `node -e "console.log(require('crypto').random
 ## 3. Cấu trúc
 
 ```
-be/
+backend/
 ├── sql/001_schema.sql        7 bảng, utf8mb4, giờ UTC
 ├── scripts/
 │   ├── connect.ts            kết nối MySQL cho script
@@ -63,7 +63,7 @@ be/
     └── validation/auth.ts    schema zod + luật đăng nhập staff
 ```
 
-Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyên** `../src/validation/` của app Customer, nên câu báo lỗi
+Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyên** `../app/src/validation/` của app Customer, nên câu báo lỗi
 ở trình duyệt và ở server luôn giống nhau.
 
 ## 4. Quy ước API
@@ -135,7 +135,7 @@ Gửi lại cùng `clientRequestId` → trả bản ghi cũ, không gửi email 
 
 Server **dừng ngay khi khởi động** nếu chọn `EMAILJS` mà thiếu `EMAILJS_*`, hoặc test mode bật mà thiếu
 `EMAIL_TEST_RECIPIENT`. Với `MOCK`, test mode chỉ có tác dụng khi có điền `EMAIL_TEST_RECIPIENT` (quyết định P0-6).
-Private key EmailJS chỉ nằm trong `be/.env`, không bao giờ gửi ra trình duyệt hay ghi vào log/DB.
+Private key EmailJS chỉ nằm trong `backend/.env`, không bao giờ gửi ra trình duyệt hay ghi vào log/DB.
 
 Đổi `MOCK_EMAIL_FAIL` thì phải **khởi động lại** server (Ctrl + C rồi `npm run dev`).
 

@@ -1,5 +1,5 @@
 // Shared MySQL connection helper for the database scripts (db-reset, seed).
-// Reads be/.env, connects in UTC so DATETIME values are stored as UTC.
+// Reads backend/.env, connects in UTC so DATETIME values are stored as UTC.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";

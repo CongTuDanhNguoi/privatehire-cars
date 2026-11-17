@@ -7,7 +7,7 @@ import { initSession } from "./services/auth";
 import "./index.css";
 
 // Hỏi server ai đang đăng nhập (cookie) trước khi vẽ app, để RequireAuth / GuestOnly chạy đúng.
-// Tài khoản demo alex.morgan@example.com / Password123 có sẵn trong database (be/scripts/seed.ts).
+// Tài khoản demo alex.morgan@example.com / Password123 có sẵn trong database (backend/scripts/seed.ts).
 void initSession().then(() => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

@@ -4,13 +4,13 @@
 
 | Phần | Thư mục | Cổng | Mô tả |
 |---|---|---|---|
-| **App Customer** | gốc repo (`src/`) | 5173 | Web dạng điện thoại 390 px, chuyển từ Figma (Option B — Coded Interactive Prototype) |
+| **App Customer** | `app/` | 5173 | Web dạng điện thoại 390 px, chuyển từ Figma (Option B — Coded Interactive Prototype) |
 | **Staff Portal** | `web/` | 5174 | Web desktop cho nhân viên quản lý câu hỏi của khách (Enquiry Management) |
-| **Backend** | `be/` | 4000 | Node.js + Express + TypeScript + **MySQL 8**, dùng chung cho cả hai app |
+| **Backend** | `backend/` | 4000 | Node.js + Express + TypeScript + **MySQL 8**, dùng chung cho cả hai app |
 
 - Thiết kế Figma (app Customer): <https://www.figma.com/design/vcCuk3p2GNdtuF0u3dHFPo/PrivateHire-Cars>
 - Kế hoạch + mọi quyết định đã chốt: [`docs/STAFF_PORTAL_PLAN.md`](docs/STAFF_PORTAL_PLAN.md) (bảng P0-x ở đầu file ưu tiên hơn nội dung bên dưới)
-- API + lệnh curl: [`be/README.md`](be/README.md) · Gửi email thật: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md)
+- API + lệnh curl: [`backend/README.md`](backend/README.md) · Gửi email thật: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md)
 - Kiểm thử tự động: app Customer **15/15 PASS** · Staff Portal **10/10 PASS** · API **47/47 PASS**
 
 ---
@@ -42,7 +42,7 @@ App Customer (Vite :5173, mobile)          Staff Portal (Vite :5174, desktop)
         │  /api/customer/*                          │  /api/staff/*
         └────────────── Vite proxy /api ────────────┘
                               ▼
-                be/  Express + TypeScript :4000 ──► EmailJS REST API (email thật, gọi từ server)
+                backend/  Express + TypeScript :4000 ──► EmailJS REST API (email thật, gọi từ server)
                 cookie phc_customer / phc_staff ──► MockEmailProvider (không gửi thật)
                               ▼
                        MySQL 8 (database: privatehire)
@@ -59,15 +59,15 @@ App Customer (Vite :5173, mobile)          Staff Portal (Vite :5174, desktop)
 | Database | MySQL 8, giờ lưu UTC |
 | Email | EmailJS (thật) hoặc Mock (giả lập), Test mode chuyển mọi email về 1 hộp thư |
 | Kiểm thử | Playwright (2 app) + smoke test API |
-| Chạy | Docker Compose (MySQL + be + web + app) |
+| Chạy | Docker Compose (db + backend + web + app) |
 
 ## 2. Chạy bằng Docker (khuyên dùng)
 
 **Yêu cầu:** Docker Desktop đang chạy (góc dưới cửa sổ Docker Desktop hiện *Engine running*).
 
 ```bash
-git clone https://github.com/CongTuDanhNguoi/privatehire-react-fe.git
-cd privatehire-react-fe
+git clone https://github.com/CongTuDanhNguoi/privatehire-cars.git
+cd privatehire-cars
 docker compose up -d
 ```
 
@@ -85,15 +85,15 @@ Database được **tự tạo + nạp dữ liệu mẫu** ở lần chạy đ�
 | Lệnh | Tác dụng |
 |---|---|
 | `docker compose up -d` | Bật cả hệ thống |
-| `docker compose ps` | Xem trạng thái 4 container (`db`, `be`, `web`, `app`) |
-| `docker compose logs -f be` | Xem log backend (email Mock được in ở đây) |
-| `docker compose exec be npm run db:reset` | **Xoá sạch** dữ liệu rồi nạp lại dữ liệu mẫu — chạy trước mỗi buổi demo |
-| `docker compose up -d --force-recreate be` | Khởi động lại backend sau khi sửa `be/.env` |
+| `docker compose ps` | Xem trạng thái 4 container (`db`, `backend`, `web`, `app`) |
+| `docker compose logs -f backend` | Xem log backend (email Mock được in ở đây) |
+| `docker compose exec backend npm run db:reset` | **Xoá sạch** dữ liệu rồi nạp lại dữ liệu mẫu — chạy trước mỗi buổi demo |
+| `docker compose up -d --force-recreate backend` | Khởi động lại backend sau khi sửa `backend/.env` |
 | `docker compose down` | Tắt (dữ liệu vẫn giữ) |
 | `docker compose down -v` | Tắt **và xoá** database + thư viện đã cài |
 
 Mã nguồn được gắn thẳng vào container nên sửa code không cần build lại image.
-Cấu hình email đọc từ `be/.env` nếu có (xem [mục 5](#5-gửi-email-mock--emailjs--test-mode)); không có file này thì mặc định Mock.
+Cấu hình email đọc từ `backend/.env` nếu có (xem [mục 5](#5-gửi-email-mock--emailjs--test-mode)); không có file này thì mặc định Mock.
 
 ## 3. Chạy không dùng Docker
 
@@ -101,13 +101,14 @@ Yêu cầu: Node.js ≥ 20.19 và MySQL 8 cài trên máy. Mỗi phần có `pac
 
 ```bash
 # Terminal 1 — backend
-cd be
+cd backend
 npm install
 cp .env.example .env        # điền DB_PASSWORD (MySQL của máy) và JWT_SECRET (chuỗi ngẫu nhiên ≥ 32 ký tự)
 npm run db:reset            # tạo database + dữ liệu mẫu
 npm run dev                 # http://localhost:4000
 
 # Terminal 2 — app Customer
+cd app
 npm install
 npm run dev                 # http://localhost:5173
 
@@ -147,9 +148,9 @@ Dữ liệu mẫu có **7 enquiry** (General + Trip, Awaiting + Resolved) và **
 
 ## 5. Gửi email: Mock / EmailJS / Test mode
 
-Đặt trong `be/.env`, rồi `docker compose up -d --force-recreate be`:
+Đặt trong `backend/.env`, rồi `docker compose up -d --force-recreate backend`:
 
-| Muốn | `be/.env` | Staff Portal hiện |
+| Muốn | `backend/.env` | Staff Portal hiện |
 |---|---|---|
 | Demo không gửi email thật (mặc định) | `EMAIL_PROVIDER=MOCK` | Banner "Mock email service — responses are saved but NO real email is sent." |
 | Gửi thật nhưng chỉ tới hộp thư nhóm | `EMAIL_PROVIDER=EMAILJS`, `EMAIL_TEST_MODE=true`, `EMAIL_TEST_RECIPIENT=<hộp thư>` | Banner "Test mode — all emails are delivered to …"; tiêu đề email có tiền tố `[TEST → <email khách>]` |
@@ -157,7 +158,7 @@ Dữ liệu mẫu có **7 enquiry** (General + Trip, Awaiting + Resolved) và **
 | Demo nút Retry với Mock | thêm `MOCK_EMAIL_FAIL=next` (lần gửi kế tiếp thất bại) hoặc `always` | |
 
 Cài EmailJS từng bước: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md). Backend **dừng ngay khi khởi động** nếu chọn
-EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận — xem lỗi bằng `docker compose logs be`.
+EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận — xem lỗi bằng `docker compose logs backend`.
 
 ## 6. App Customer: màn hình và route
 
@@ -186,7 +187,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 | `/gallery`, `/gallery/:slug` | Xem các màn Figma tĩnh chưa nối luồng | Ai cũng xem được |
 | `*` | → `/` | |
 
-- Đăng nhập / đăng ký lưu trong **MySQL** qua API (`src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
+- Đăng nhập / đăng ký lưu trong **MySQL** qua API (`app/src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
   Phiên là cookie httpOnly; `getCurrentUser()` đọc bộ nhớ đệm được nạp bằng `initSession()` khi mở app.
 - Đăng ký xong được **đăng nhập luôn** (giữ nguyên màn Registration Complete → "Go to Home").
 - Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
@@ -215,15 +216,36 @@ của Staff Portal; khi nhân viên trả lời, "My enquiries" hiện **Resolve
 ## 8. Cấu trúc thư mục
 
 ```
-├── docker-compose.yml         MySQL + be + web + app (chế độ dev)
+privatehire-cars/
+├── docker-compose.yml         db + backend + web + app (chế độ dev)
+├── README.md
 ├── docs/
 │   ├── STAFF_PORTAL_PLAN.md   kế hoạch + bảng quyết định P0-x
 │   └── EMAILJS_SETUP.md       hướng dẫn cài email thật
-├── be/                        BACKEND (xem be/README.md)
-│   ├── sql/001_schema.sql     7 bảng MySQL
-│   ├── scripts/               db-reset, db-init, seed, smoke-test
-│   └── src/                   config, db, errors, middleware, routes, services, email/, validation/
-├── web/                       STAFF PORTAL
+│
+├── app/                       APP CUSTOMER (mobile 390 px)
+│   ├── index.html, package.json, vite.config.ts (proxy /api)
+│   ├── public/figma-assets/   ảnh + icon tải từ Figma
+│   ├── scripts/
+│   │   ├── download-figma-assets.mjs
+│   │   └── selftest.mjs       self-test Playwright 15 tiêu chí
+│   └── src/
+│       ├── main.tsx           initSession() rồi mới vẽ app
+│       ├── App.tsx            route + chặn quyền truy cập
+│       ├── components/        RouteGuards, FigmaClickable, BottomNav, Icon, MobileFrame
+│       ├── context/BookingContext.tsx   dịch vụ đang chọn (sessionStorage)
+│       ├── data/services.ts   6 dịch vụ
+│       ├── services/
+│       │   ├── auth.ts        đăng nhập / đăng ký qua API
+│       │   └── support.ts     bookings, gửi enquiry, My enquiries
+│       ├── validation/        rules, loginValidation, registerValidation, enquiryValidation, format
+│       ├── pages/             Welcome, Login, Register, RegistrationComplete, Home, ServiceSelection,
+│       │                      JourneyDetails, Profile, Support, Gallery
+│       ├── screens/           ⚠️ code Figma xuất ra — KHÔNG sửa tay
+│       └── manifest/          danh sách màn Figma (dùng cho /gallery)
+│
+├── web/                       STAFF PORTAL (desktop)
+│   ├── index.html, package.json, vite.config.ts (cổng 5174, proxy /api)
 │   ├── scripts/selftest.mjs   self-test Playwright (10 bước)
 │   └── src/
 │       ├── api/               client (lỗi chuẩn hoá) + enquiries + staff
@@ -231,30 +253,19 @@ của Staff Portal; khi nhân viên trả lời, "My enquiries" hiện **Resolve
 │       ├── components/ui/     Button, Field, Badge, Alert, Card, Segmented, ConfirmDialog, Toast, Spinner, CopyButton…
 │       ├── components/layout/ AppShell, TopBar, banner email
 │       ├── features/enquiries/ bảng Inbox, thẻ thông tin, ô soạn phản hồi, lịch sử, bản nháp
+│       ├── lib/               announce, format, storage, useAsync
 │       └── pages/             Login, Inbox, EnquiryDetail, NotFound, UiKit
-├── index.html, package.json, vite.config.ts (proxy /api)   ← APP CUSTOMER
-├── public/figma-assets/       ảnh + icon tải từ Figma
-├── scripts/
-│   ├── download-figma-assets.mjs
-│   └── selftest.mjs           self-test Playwright 15 tiêu chí
-└── src/
-    ├── main.tsx               initSession() rồi mới vẽ app
-    ├── App.tsx                route + chặn quyền truy cập
-    ├── components/            RouteGuards, FigmaClickable, BottomNav, Icon, MobileFrame
-    ├── context/BookingContext.tsx   dịch vụ đang chọn (sessionStorage)
-    ├── data/services.ts       6 dịch vụ
-    ├── services/
-    │   ├── auth.ts            đăng nhập / đăng ký qua API
-    │   └── support.ts         bookings, gửi enquiry, My enquiries
-    ├── validation/            rules, loginValidation, registerValidation, enquiryValidation, format
-    ├── pages/                 Welcome, Login, Register, RegistrationComplete, Home, ServiceSelection,
-    │                          JourneyDetails, Profile, Support, Gallery
-    ├── screens/               ⚠️ code Figma xuất ra — KHÔNG sửa tay
-    └── manifest/              danh sách màn Figma (dùng cho /gallery)
+│
+└── backend/                   BACKEND dùng chung (xem backend/README.md)
+    ├── .env.example           mẫu cấu hình (file .env thật không commit)
+    ├── sql/001_schema.sql     7 bảng MySQL
+    ├── scripts/               db-reset, db-init, seed, smoke-test
+    └── src/                   config, db, errors, middleware, routes, services, email/, validation/
 ```
 
-Luật kiểm tra dữ liệu được **dùng chung** giữa frontend và backend để câu báo lỗi luôn giống nhau:
-`src/validation/*` (app Customer ↔ be), `be/src/validation/staffLogin.ts` và `reply.ts` (be ↔ Staff Portal).
+Mỗi thư mục `app/`, `web/`, `backend/` có `package.json` riêng (cài riêng bằng `npm install` trong thư mục đó).
+Luật kiểm tra dữ liệu được **dùng chung** để câu báo lỗi luôn giống nhau:
+`app/src/validation/*` (app ↔ backend), `backend/src/validation/staffLogin.ts` và `reply.ts` (backend ↔ web).
 
 ## 9. Quy tắc kiểm tra dữ liệu nhập
 
@@ -314,8 +325,8 @@ Server chỉ lưu **4 số cuối thẻ** — không lưu số thẻ đầy đ�
 
 | Màn | Làm từ | Muốn sửa thì |
 |---|---|---|
-| Welcome, Home | code Figma trong `src/screens/**` bọc bởi `FigmaClickable` | chỉ thêm/sửa hành động trong `actions` của page |
-| Login, Journey Details | bản chép code Figma trong `src/pages/` + state | chỉ sửa phần động, giữ class và `data-node-id` |
+| Welcome, Home | code Figma trong `app/src/screens/**` bọc bởi `FigmaClickable` | chỉ thêm/sửa hành động trong `actions` của page |
+| Login, Journey Details | bản chép code Figma trong `app/src/pages/` + state | chỉ sửa phần động, giữ class và `data-node-id` |
 | Registration, Registration Complete, Service Selection, Profile, Contact Support | dựng tay theo ảnh thiết kế | giữ màu/khoảng cách đang dùng |
 
 ```tsx
@@ -335,10 +346,10 @@ Chạy khi hệ thống đang bật (`docker compose up -d`). Lần đầu cần
 
 | Bộ test | Lệnh | Kết quả mong đợi | Ghi chú |
 |---|---|---|---|
-| App Customer (15 tiêu chí AC-01…AC-15) | `npm run selftest` (ở thư mục gốc) | **15/15 PASS** | Chạy lại nhiều lần được (email đăng ký ngẫu nhiên mỗi lần). Kết quả: `selftest/report.html` + `report.pdf` |
-| Staff Portal (S01…S10) | `cd web && npm run selftest` | **10/10 PASS** | Cần `be/.env`: `EMAIL_PROVIDER=MOCK`, `MOCK_EMAIL_FAIL=next` + `db:reset` trước (xem đầu file `web/scripts/selftest.mjs`) |
-| API (47 bước) | `docker compose exec be npm run smoke` | **47/47 PASS** | Tự reset DB, tự bật server riêng cổng 4100 với Mock. Chạy xong nên `db:reset` |
-| Kiểu TypeScript | `npm run typecheck` · `cd web && npm run typecheck` · `cd be && npm run typecheck` | 0 lỗi | |
+| App Customer (15 tiêu chí AC-01…AC-15) | `cd app && npm run selftest` | **15/15 PASS** | Chạy lại nhiều lần được (email đăng ký ngẫu nhiên mỗi lần). Kết quả: `app/selftest/report.html` + `report.pdf` |
+| Staff Portal (S01…S10) | `cd web && npm run selftest` | **10/10 PASS** | Cần `backend/.env`: `EMAIL_PROVIDER=MOCK`, `MOCK_EMAIL_FAIL=next` + `db:reset` trước (xem đầu file `web/scripts/selftest.mjs`) |
+| API (47 bước) | `docker compose exec backend npm run smoke` | **47/47 PASS** | Tự reset DB, tự bật server riêng cổng 4100 với Mock. Chạy xong nên `db:reset` |
+| Kiểu TypeScript | `cd app && npm run typecheck` · `cd web && npm run typecheck` · `cd backend && npm run typecheck` | 0 lỗi | |
 
 Tiêu chí app Customer: AC-01 khách chưa đăng nhập bị chặn · AC-02 Welcome → Login/Register · AC-03 lỗi Login ·
 AC-04 Login → Home · AC-05 Book a Ride → Services · AC-06 Continue tắt khi chưa chọn · AC-07 6 dịch vụ, chọn đúng 1 ·
@@ -347,7 +358,7 @@ AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Ho
 
 ## 12. Kịch bản demo
 
-Trước buổi demo: `docker compose up -d` → `docker compose exec be npm run db:reset`. Chọn chế độ email ở [mục 5](#5-gửi-email-mock--emailjs--test-mode)
+Trước buổi demo: `docker compose up -d` → `docker compose exec backend npm run db:reset`. Chọn chế độ email ở [mục 5](#5-gửi-email-mock--emailjs--test-mode)
 (muốn demo lỗi + Retry với Mock thì đặt `MOCK_EMAIL_FAIL=next`).
 
 1. App Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → **gõ `localhost:5173/support`** (không có nút trong Profile).
@@ -364,8 +375,8 @@ Trước buổi demo: `docker compose up -d` → `docker compose exec be npm run
 12. Log out → về Login; bấm Back không vào lại trang trong.
 13. (Thêm) Quay lại `localhost:5173/support` → "My enquiries" hiện trạng thái mới.
 
-Demo 15 tiêu chí của app Customer: làm theo bảng AC-01…AC-15 ở [mục 11](#11-kiểm-thử-tự-động) (hoặc chạy `npm run selftest`
-và mở `selftest/report.html` để có ảnh từng bước).
+Demo 15 tiêu chí của app Customer: làm theo bảng AC-01…AC-15 ở [mục 11](#11-kiểm-thử-tự-động) (hoặc chạy `cd app && npm run selftest`
+và mở `app/selftest/report.html` để có ảnh từng bước).
 
 ## 13. Quy trình Git
 
@@ -376,7 +387,7 @@ và mở `selftest/report.html` để có ảnh từng bước).
 | `feature/staff-portal` | Staff Portal + Backend + Docker → gộp vào `dev` qua Pull Request |
 
 Trước khi gộp: typecheck 0 lỗi, selftest app Customer 15/15, selftest Staff Portal 10/10, smoke API 47/47.
-Không commit `be/.env` (chứa mật khẩu MySQL và key EmailJS — đã có trong `.gitignore`).
+Không commit `backend/.env` (chứa mật khẩu MySQL và key EmailJS — đã có trong `.gitignore`).
 
 ## 14. Giới hạn hiện tại
 
@@ -386,7 +397,7 @@ Không commit `be/.env` (chứa mật khẩu MySQL và key EmailJS — đã có 
 - Staff Portal: chỉ 2 tài khoản seed, không có trang quản lý tài khoản / phân quyền; khách chưa trả lời lại được qua email (1 chiều).
 - Tab Activity / Alerts, các mục Profile (Personal Information, Saved Addresses, Payment Details), Forgot Password,
   Continue to Vehicle Selection chưa có màn đích.
-- Backend chạy bằng `tsx` (không xuất file JS); `npm run build` của `be/` chỉ kiểm tra kiểu.
+- Backend chạy bằng `tsx` (không xuất file JS); `npm run build` của `backend/` chỉ kiểm tra kiểu.
 - Hệ thống dành cho demo trên localhost — chưa cấu hình HTTPS / deploy.
 
 ## 15. Xử lý sự cố
@@ -395,11 +406,11 @@ Không commit `be/.env` (chứa mật khẩu MySQL và key EmailJS — đã có 
 |---|---|
 | `docker` báo `cannot find dockerDesktopLinuxEngine` | Docker Desktop chưa chạy engine: mở Docker Desktop, hoặc chạy `docker desktop start` |
 | Container "Up" nhưng trình duyệt không vào được 5173/5174/4000 | Docker Desktop vừa khởi động lại làm hỏng chuyển tiếp cổng: `docker compose up -d --force-recreate` |
-| Staff Portal báo "Can't reach the server" | Backend chưa chạy: `docker compose ps`, `docker compose logs be` |
-| Backend không khởi động sau khi sửa `be/.env` | `docker compose logs be` — server in rõ thiếu / sai biến nào (không in giá trị key) |
+| Staff Portal báo "Can't reach the server" | Backend chưa chạy: `docker compose ps`, `docker compose logs backend` |
+| Backend không khởi động sau khi sửa `backend/.env` | `docker compose logs backend` — server in rõ thiếu / sai biến nào (không in giá trị key) |
 | Email không tới | Xem lỗi trong mục Failed của Response history; kiểm tra lại [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md) (non-browser API, Service ID, Template ID); kiểm tra thư mục Spam |
-| Đăng nhập báo "Too many attempts…" | Chờ 15 phút hoặc `docker compose exec be npm run db:reset` |
-| Muốn dữ liệu sạch như ban đầu | `docker compose exec be npm run db:reset` |
+| Đăng nhập báo "Too many attempts…" | Chờ 15 phút hoặc `docker compose exec backend npm run db:reset` |
+| Muốn dữ liệu sạch như ban đầu | `docker compose exec backend npm run db:reset` |
 | Selftest báo thiếu trình duyệt | `npx playwright install chromium` (trong thư mục tương ứng) |
-| Ảnh/icon app Customer không hiện | Kiểm tra `public/figma-assets/`; thêm màn Figma mới thì chạy `npm run figma-assets` |
+| Ảnh/icon app Customer không hiện | Kiểm tra `app/public/figma-assets/`; thêm màn Figma mới thì chạy `npm run figma-assets` |
 | Giao diện nền tối khác thiết kế | Trình duyệt đang ép chế độ tối — tắt *Force dark mode* hoặc tiện ích dark mode |

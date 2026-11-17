@@ -3,7 +3,7 @@
 //   1. resets the database (npm run db:reset)  ⚠️ wipes all data
 //   2. starts its own API server on port 4100 with EMAIL_PROVIDER=MOCK (restarting it to switch MOCK_EMAIL_FAIL)
 //   3. checks auth, customer enquiries, staff inbox/detail/status, sending, duplicate protection and retry.
-// MySQL must be running and be/.env must have the right DB_* values. Does not touch a server on port 4000.
+// MySQL must be running and backend/.env must have the right DB_* values. Does not touch a server on port 4000.
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

@@ -1,5 +1,5 @@
 // =============================================================
-// auth.ts — Đăng nhập / đăng ký khách hàng qua backend thật (be/, MySQL).
+// auth.ts — Đăng nhập / đăng ký khách hàng qua backend thật (backend/, MySQL).
 // Giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ, nên các màn hình không phải sửa giao diện.
 //   - Phiên đăng nhập là cookie httpOnly do server cấp (phc_customer).
 //   - getCurrentUser() vẫn chạy đồng bộ: đọc bộ nhớ đệm phiên, được nạp bằng initSession()

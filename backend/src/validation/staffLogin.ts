@@ -1,6 +1,6 @@
 // Staff login form rules and messages (plan §9). Pure functions with no server-only imports,
 // so the Staff Portal (web/) uses exactly the same rules and wording as the API.
-import { validateEmail } from "../../../src/validation/rules";
+import { validateEmail } from "../../../app/src/validation/rules";
 
 export const STAFF_LOGIN_MESSAGES = {
   emailRequired: "Email address is required.",

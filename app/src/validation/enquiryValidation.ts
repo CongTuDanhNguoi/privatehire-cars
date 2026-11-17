@@ -1,6 +1,6 @@
 // =============================================================
 // enquiryValidation.ts — Kiểm tra form "Contact Support" (khách gửi câu hỏi).
-// Dùng chung cho app Customer (màn /support) và backend (be/), nên câu báo lỗi luôn giống nhau.
+// Dùng chung cho app Customer (màn /support) và backend/, nên câu báo lỗi luôn giống nhau.
 // =============================================================
 
 export type EnquiryType = "GENERAL" | "TRIP";

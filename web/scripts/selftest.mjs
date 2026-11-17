@@ -3,11 +3,11 @@
 //
 // Before running:
 //   1. The stack is running (docker compose up -d) — Staff Portal on http://localhost:5174.
-//   2. be/.env uses the MOCK email provider and forces ONE failure:
+//   2. backend/.env uses the MOCK email provider and forces ONE failure:
 //        EMAIL_PROVIDER=MOCK
 //        MOCK_EMAIL_FAIL=next
-//      then: docker compose up -d --force-recreate be
-//   3. Fresh demo data: docker compose exec be npm run db:reset
+//      then: docker compose up -d --force-recreate backend
+//   3. Fresh demo data: docker compose exec backend npm run db:reset
 //   4. Once: npx playwright install chromium
 // Run:  cd web && npm run selftest
 // Result: web/selftest/ — screenshots + report.html

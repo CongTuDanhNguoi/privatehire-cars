@@ -13,7 +13,7 @@ const conn = await connect().catch((err: unknown) => {
   console.error(
     "Cannot connect to MySQL:",
     err instanceof Error ? err.message : err,
-    "\nCheck that MySQL is running and DB_HOST / DB_PORT / DB_USER / DB_PASSWORD in be/.env are correct.",
+    "\nCheck that MySQL is running and DB_HOST / DB_PORT / DB_USER / DB_PASSWORD in backend/.env are correct.",
   );
   process.exit(1);
 });

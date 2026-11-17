@@ -12,7 +12,7 @@ import {
   validateStaffEmail,
   validateStaffLogin,
   type StaffLoginErrors,
-} from "../../../be/src/validation/staffLogin";
+} from "../../../backend/src/validation/staffLogin";
 
 export default function LoginPage() {
   const { signIn, notice, clearNotice } = useAuth();

@@ -14,7 +14,7 @@ const server = createApp().listen(config.port, async () => {
   );
   if (!(await pingDatabase())) {
     console.warn(
-      "WARNING: cannot reach MySQL. Check that it is running and DB_* in be/.env are correct (GET /api/health shows the status).",
+      "WARNING: cannot reach MySQL. Check that it is running and DB_* in backend/.env are correct (GET /api/health shows the status).",
     );
   }
 });

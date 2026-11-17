@@ -11,7 +11,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { TextArea, TextField } from "../../components/ui/Field";
 import { announce } from "../../lib/announce";
-import { REPLY_LIMITS, REPLY_MESSAGES, validateReply, type ReplyErrors } from "../../../../be/src/validation/reply";
+import { REPLY_LIMITS, REPLY_MESSAGES, validateReply, type ReplyErrors } from "../../../../backend/src/validation/reply";
 import type { Draft } from "./useDraft";
 
 type Outcome =

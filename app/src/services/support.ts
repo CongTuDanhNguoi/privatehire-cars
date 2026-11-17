@@ -1,5 +1,5 @@
 // =============================================================
-// support.ts — Gửi câu hỏi (enquiry) tới đội hỗ trợ qua backend (be/).
+// support.ts — Gửi câu hỏi (enquiry) tới đội hỗ trợ qua backend/.
 // Nhân viên xem và trả lời trong Staff Portal.
 // =============================================================
 import { clearSession, SERVER_UNAVAILABLE_MESSAGE } from "./auth";

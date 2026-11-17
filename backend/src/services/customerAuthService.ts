@@ -2,8 +2,8 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { pool } from "../db.js";
 import { AppError, validationError } from "../errors.js";
-import { DUPLICATE_EMAIL_MESSAGE, validateRegistration } from "../../../src/validation/registerValidation";
-import { LOGIN_MESSAGES, validateLogin } from "../../../src/validation/loginValidation";
+import { DUPLICATE_EMAIL_MESSAGE, validateRegistration } from "../../../app/src/validation/registerValidation";
+import { LOGIN_MESSAGES, validateLogin } from "../../../app/src/validation/loginValidation";
 import type { LoginBody, RegisterBody } from "../validation/auth.js";
 import { clearAttempts, normalizeEmail, recordFailedAttempt } from "./loginAttempts.js";
 import { hashPassword, verifyPassword } from "./passwords.js";

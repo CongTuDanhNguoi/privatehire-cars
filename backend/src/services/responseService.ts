@@ -8,7 +8,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { pool } from "../db.js";
 import { AppError, validationError } from "../errors.js";
 import { deliveryAddressFor, emailSettings, sendEmail } from "../email/index.js";
-import { validateEmail } from "../../../src/validation/rules";
+import { validateEmail } from "../../../app/src/validation/rules";
 import { REPLY_MESSAGES, enquiryCode, validateReply } from "../validation/reply.js";
 import { RESPONSE_SELECT, getEnquiry, notFound, toResponse, type EnquiryDto } from "./staffEnquiryService.js";
 

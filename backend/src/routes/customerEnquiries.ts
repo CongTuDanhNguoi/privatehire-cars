@@ -4,7 +4,7 @@ import { requireCustomer } from "../middleware/requireCustomer.js";
 import { createEnquiry, listCustomerEnquiries } from "../services/customerEnquiryService.js";
 import { parseInput } from "../validation/auth.js";
 import { CreateEnquiryBody } from "../validation/enquiries.js";
-import type { EnquiryForm } from "../../../src/validation/enquiryValidation";
+import type { EnquiryForm } from "../../../app/src/validation/enquiryValidation";
 
 export const customerEnquiriesRouter = Router();
 customerEnquiriesRouter.use(requireCustomer);

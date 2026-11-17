@@ -3,7 +3,7 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { pool } from "../db.js";
 import { validationError } from "../errors.js";
-import { ENQUIRY_MESSAGES, validateEnquiry, type EnquiryForm } from "../../../src/validation/enquiryValidation";
+import { ENQUIRY_MESSAGES, validateEnquiry, type EnquiryForm } from "../../../app/src/validation/enquiryValidation";
 import { enquiryCode } from "../validation/reply.js";
 
 export interface Booking {

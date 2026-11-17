@@ -1,7 +1,7 @@
 // /api/customer/auth/*
 import { Router } from "express";
 import { AppError } from "../errors.js";
-import { LOGIN_MESSAGES } from "../../../src/validation/loginValidation";
+import { LOGIN_MESSAGES } from "../../../app/src/validation/loginValidation";
 import { loginRateLimit } from "../middleware/loginRateLimit.js";
 import { requireCustomer } from "../middleware/requireCustomer.js";
 import {

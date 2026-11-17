@@ -1,4 +1,4 @@
-// Types shared with the API (be/). Dates arrive as ISO strings.
+// Types shared with the API (backend/). Dates arrive as ISO strings.
 
 export interface Staff {
   id: number;
