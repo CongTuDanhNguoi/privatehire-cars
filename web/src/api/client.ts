@@ -36,6 +36,7 @@ export async function api<T>(path: string, { method = "GET", body, signal, skipA
       method,
       signal,
       credentials: "same-origin",
+      cache: "no-store", // answers depend on the session cookie
       headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });

@@ -15,6 +15,12 @@ export function createApp() {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "100kb" }));
   app.use(cookieParser());
+  // API answers depend on the session cookie: never let the browser reuse a cached copy
+  // (Back/Forward navigation would otherwise replay an old signed-in /me after Log Out).
+  app.use("/api", (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
 
   app.get("/api/health", async (_req, res) => {
     const dbUp = await pingDatabase();

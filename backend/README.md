@@ -93,7 +93,7 @@ Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyê
 | Method & path | Cần đăng nhập | Body / query | Trả về |
 |---|---|---|---|
 | `GET /api/health` | — | — | 200 `{ status: "ok", database: "up" }` · 503 khi mất DB |
-| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` — **tự đăng nhập** (P0-13) · 400 kèm `fields` · 409 email trùng |
+| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName } }` — **không** tự đăng nhập (SCRUM-12, P0-17) · 400 kèm `fields` · 409 email trùng |
 | `POST /api/customer/auth/login` | — | `{ email, password }` | 200 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` · 400 · 401 · 423 |
 | `POST /api/customer/auth/logout` | — | — | 204, xoá cookie |
 | `GET /api/customer/auth/me` | customer | — | 200 `{ user }` · 401 |
@@ -166,7 +166,7 @@ curl -s -b cust.txt $B/customer/auth/me                               # 200 Alex
 curl -s "$B/customer/auth/email-exists?email=alex.morgan@example.com" # {"exists":true}
 
 curl -s $J -d '{}' $B/customer/auth/register                          # 400 với đủ 10 lỗi
-curl -s $J -d '{"fullName":"Bao Demo","email":"bao.demo@example.com","homeAddress":"1 Test St","phone":"+84 912 345 678","cardholderName":"Bao Demo","cardNumber":"4242 4242 4242 4242","expiry":"08/28","cvv":"123","password":"Password123","confirmPassword":"Password123"}' $B/customer/auth/register   # 201 + cookie phc_customer (tự đăng nhập)
+curl -s $J -d '{"fullName":"Bao Demo","email":"bao.demo@example.com","homeAddress":"1 Test St","phone":"+84 912 345 678","cardholderName":"Bao Demo","cardNumber":"4242 4242 4242 4242","expiry":"08/28","cvv":"123","password":"Password123","confirmPassword":"Password123"}' $B/customer/auth/register   # 201, không set cookie (phải đăng nhập lại)
 # gửi lại đúng lệnh trên                                               # 409 This email address is already registered…
 
 # ---- Hai loại phiên tách biệt ----

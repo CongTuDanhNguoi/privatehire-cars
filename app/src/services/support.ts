@@ -36,6 +36,7 @@ async function call<T>(path: string, init: { method?: "GET" | "POST"; body?: unk
     res = await fetch(`/api/customer${path}`, {
       method: init.method ?? "GET",
       credentials: "same-origin",
+      cache: "no-store", // answers depend on the session cookie
       headers: init.body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
     });

@@ -28,7 +28,12 @@ export type LoginResult =
   | { ok: false; reason: "locked"; minutesLeft: number }
   | { ok: false; reason: "unavailable" }; // không kết nối được server
 
-export type RegisterResult = { ok: true; user: SessionUser } | { ok: false; errors: RegistrationErrors };
+export interface RegisteredUser {
+  email: string;
+  fullName: string;
+}
+
+export type RegisterResult = { ok: true; user: RegisteredUser } | { ok: false; errors: RegistrationErrors };
 
 export const SERVER_UNAVAILABLE_MESSAGE = "Can't reach the server. Check your connection and try again.";
 
@@ -38,11 +43,16 @@ interface ApiReply {
   data: Record<string, unknown> | null;
 }
 
-async function call(path: string, init: { method?: "GET" | "POST"; body?: unknown } = {}): Promise<ApiReply> {
+async function call(
+  path: string,
+  init: { method?: "GET" | "POST"; body?: unknown; keepalive?: boolean } = {},
+): Promise<ApiReply> {
   try {
     const res = await fetch(`/api/customer${path}`, {
       method: init.method ?? "GET",
       credentials: "same-origin",
+      cache: "no-store", // kết quả phụ thuộc cookie phiên: không dùng bản lưu cũ khi bấm Back/Forward
+      keepalive: init.keepalive,
       headers: init.body !== undefined ? { "Content-Type": "application/json" } : undefined,
       body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
     });
@@ -73,7 +83,9 @@ export function getCurrentUser(): SessionUser | null {
 
 export function logout(): void {
   currentUser = null; // xoá ngay để RequireAuth chặn lại
-  void call("/auth/logout", { method: "POST" }); // server xoá cookie (chạy nền)
+  // Server xoá cookie (chạy nền). keepalive: yêu cầu vẫn gửi xong dù trang chuyển đi / F5 ngay sau khi bấm Log Out,
+  // nếu không cookie còn sống và lần tải trang sau lại thấy như đang đăng nhập.
+  void call("/auth/logout", { method: "POST", keepalive: true });
 }
 
 // Phiên hết hạn khi đang dùng (API trả 401) → coi như đã đăng xuất.
@@ -87,12 +99,13 @@ export async function isEmailRegistered(email: string): Promise<boolean> {
   return status === 200 && data?.exists === true;
 }
 
-// Đăng ký: server kiểm tra lỗi (cùng luật với src/validation), lưu MySQL và đăng nhập luôn.
+// Đăng ký: server kiểm tra lỗi (cùng luật với src/validation) và lưu MySQL.
+// KHÔNG tự đăng nhập (SCRUM-12 / DEF-05): khách phải vào /login và nhập lại mật khẩu.
 export async function registerUser(form: RegistrationForm): Promise<RegisterResult> {
   const { status, data } = await call("/auth/register", { method: "POST", body: form });
   if (status === 201 && data?.user) {
-    currentUser = data.user as SessionUser;
-    return { ok: true, user: currentUser };
+    const user = data.user as RegisteredUser;
+    return { ok: true, user: { email: user.email, fullName: user.fullName } };
   }
   if (status === 0) return { ok: false, errors: { email: SERVER_UNAVAILABLE_MESSAGE } };
   const err = errorOf(data);

@@ -20,6 +20,8 @@ import RegistrationCompletePage from "./pages/RegistrationCompletePage";
 import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
+import VehicleSizePage from "./pages/VehicleSizePage";
+import AvailabilityPage from "./pages/AvailabilityPage";
 import ProfilePage from "./pages/ProfilePage";
 import SupportPage from "./pages/SupportPage";
 import { GalleryIndex, GalleryScreen } from "./pages/GalleryPage";
@@ -35,6 +37,8 @@ export default function App() {
       <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
       <Route path="/services" element={<RequireAuth><ServiceSelectionPage /></RequireAuth>} />
       <Route path="/journey" element={<RequireAuth><JourneyDetailsPage /></RequireAuth>} />
+      <Route path="/vehicle" element={<RequireAuth><VehicleSizePage /></RequireAuth>} />
+      <Route path="/availability" element={<RequireAuth><AvailabilityPage /></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
       <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
 

@@ -27,8 +27,8 @@ export async function isCustomerEmailRegistered(rawEmail: string): Promise<boole
   return rows.length > 0;
 }
 
-// Decision P0-13 (replaces P0-2): registering signs the customer in, like the original app
-// (Registration Complete → "Go to Home"). The route starts the session with the returned id.
+// Decision P0-17 (team's SCRUM-12 fix): registering does NOT sign the customer in;
+// Registration Complete sends them to "Go to Login".
 export async function registerCustomer(form: RegisterBody): Promise<{ id: number; user: CustomerUser }> {
   const errors = validateRegistration(form);
   if (Object.keys(errors).length > 0) throw validationError(errors);

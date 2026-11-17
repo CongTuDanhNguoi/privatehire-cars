@@ -230,21 +230,32 @@ await test("AC-13", "Register: email đã tồn tại", "Đăng ký bằng alex.
 // sẽ bị báo trùng từ lần chạy thứ hai.
 const NEW_EMAIL = `new.user+${Date.now()}@example.com`;
 
-await test("AC-14", "Register thành công → Registration Complete → Home", "Dùng email mới → Create Account → Go to Home", async (s) => {
+// SCRUM-12 (DEF-05): đăng ký KHÔNG tự đăng nhập — Registration Complete → Go to Login → đăng nhập → Home.
+await test("AC-14", "Register thành công → Registration Complete → Go to Login → Home", "Dùng email mới → Create Account → Go to Login (email điền sẵn) → Log In", async (s) => {
   await page.fill("#email", NEW_EMAIL);
   await page.click("button[type=submit]");
   await wait(800);
   expect(pathname() === "/register/complete", `Đang ở ${pathname()}`);
   expect((await page.textContent('[data-testid="registered-email"]')) === NEW_EMAIL, "Sai email trên màn Complete");
   await s("registration-complete");
-  await page.click("text=Go to Home");
+  await page.goto(BASE + "/home");
   await wait();
+  expect(pathname() === "/login", "Vừa đăng ký xong đã vào được Home (đáng lẽ phải đăng nhập trước)");
+  await page.goBack();
+  await wait();
+  await page.click("text=Go to Login");
+  await wait();
+  expect(pathname() === "/login", `Đang ở ${pathname()}`);
+  expect((await page.inputValue("#email")) === NEW_EMAIL, "Login chưa điền sẵn email vừa đăng ký");
+  await page.fill("#password", "Password123");
+  await page.click("button[type=submit]");
+  await wait(800);
   expect(pathname() === "/home", `Đang ở ${pathname()}`);
-  await s("register-to-home");
+  await s("register-login-home");
   await page.goto(BASE + "/profile");
   await wait();
   expect((await page.textContent('[data-testid="profile-email"]')) === NEW_EMAIL, "Profile không hiện tài khoản mới");
-  return `Tài khoản mới đăng nhập luôn, Profile hiện ${NEW_EMAIL}`;
+  return `Đăng ký không tự đăng nhập; đăng nhập lại → Home, Profile hiện ${NEW_EMAIL}`;
 });
 
 await test("AC-15", "Không có màn Booking Confirmation / Payment", "Kiểm tra danh sách route", async () => {

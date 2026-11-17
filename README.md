@@ -11,7 +11,7 @@
 - Thiết kế Figma (app Customer): <https://www.figma.com/design/vcCuk3p2GNdtuF0u3dHFPo/PrivateHire-Cars>
 - Kế hoạch + mọi quyết định đã chốt: [`docs/STAFF_PORTAL_PLAN.md`](docs/STAFF_PORTAL_PLAN.md) (bảng P0-x ở đầu file ưu tiên hơn nội dung bên dưới)
 - API + lệnh curl: [`backend/README.md`](backend/README.md) · Gửi email thật: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md)
-- Kiểm thử tự động: app Customer **15/15 PASS** · Staff Portal **10/10 PASS** · API **47/47 PASS**
+- Kiểm thử tự động: app Customer **15/15 PASS** · sprint-1 của nhóm **78/79** · Staff Portal **10/10 PASS** · API **47/47 PASS**
 
 ---
 
@@ -164,7 +164,7 @@ EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận �
 
 ```
 Welcome ──Log In──► Login ──đúng──────────────────────────────────► Home
-   └────Sign Up───► Registration ──hợp lệ──► Registration Complete ──Go to Home──► Home
+   └────Sign Up───► Registration ──hợp lệ──► Registration Complete ──Go to Login──► Login (email điền sẵn) ──► Home
 
 Home ──Book a Ride / View All Services──► Service Selection ──Continue──► Journey Details
                                               ▲                               │
@@ -178,10 +178,12 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 | `/` | Welcome | Chỉ khi **chưa** đăng nhập (đã đăng nhập → tự sang `/home`) |
 | `/login` | Login | Chỉ khi chưa đăng nhập |
 | `/register` | Registration | Chỉ khi chưa đăng nhập |
-| `/register/complete` | Registration Complete | Ngay sau khi đăng ký (đã tự đăng nhập) |
+| `/register/complete` | Registration Complete | Ngay sau khi đăng ký (chưa đăng nhập — bấm "Go to Login") |
 | `/home` | Home | **Bắt buộc đăng nhập** |
 | `/services` | Service Selection | **Bắt buộc đăng nhập** |
 | `/journey` | Journey Details | **Bắt buộc đăng nhập** + đã chọn dịch vụ (chưa chọn → `/services`) |
+| `/vehicle` | Vehicle Size (Standard tối đa 4 khách, Seven-Seater tối đa 6) | **Bắt buộc đăng nhập** (sprint-1 của nhóm) |
+| `/availability` | Kiểm tra xe còn trống (dữ liệu đội xe giả lập) | **Bắt buộc đăng nhập** (sprint-1 của nhóm) |
 | `/profile` | My Profile | **Bắt buộc đăng nhập** |
 | `/support` | **Contact Support** (gửi enquiry + danh sách "My enquiries") | **Bắt buộc đăng nhập** — **không có nút dẫn tới**, gõ thẳng `localhost:5173/support` |
 | `/gallery`, `/gallery/:slug` | Xem các màn Figma tĩnh chưa nối luồng | Ai cũng xem được |
@@ -189,10 +191,10 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 
 - Đăng nhập / đăng ký lưu trong **MySQL** qua API (`app/src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
   Phiên là cookie httpOnly; `getCurrentUser()` đọc bộ nhớ đệm được nạp bằng `initSession()` khi mở app.
-- Đăng ký xong được **đăng nhập luôn** (giữ nguyên màn Registration Complete → "Go to Home").
+- Đăng ký xong **không tự đăng nhập** (SCRUM-12 / DEF-05): Registration Complete → **Go to Login** → email được điền sẵn → nhập mật khẩu → Home.
 - Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
 - Sai mật khẩu 5 lần liên tiếp → khoá 15 phút (lưu ở server).
-- **Giao diện các màn có sẵn không đổi** so với bản trước (yêu cầu của nhóm); `/support` là màn mới.
+- Phần chuyển sang MySQL không đổi giao diện màn nào; thay đổi giao diện của sprint-1 (Registration Complete, Login điền sẵn email, Journey Details, Vehicle Size, Availability) là của nhóm. `/support` là màn mới.
 - **Không có** màn Booking Confirmation / Payment — đúng phạm vi đồ án.
 
 **Contact Support (`/support`)**: chọn *General enquiry* hoặc *About a trip* (chọn 1 chuyến của chính mình, giờ hiển thị
@@ -350,11 +352,12 @@ Chạy khi hệ thống đang bật (`docker compose up -d`). Lần đầu cần
 | Staff Portal (S01…S10) | `cd web && npm run selftest` | **10/10 PASS** | Cần `backend/.env`: `EMAIL_PROVIDER=MOCK`, `MOCK_EMAIL_FAIL=next` + `db:reset` trước (xem đầu file `web/scripts/selftest.mjs`) |
 | API (47 bước) | `docker compose exec backend npm run smoke` | **47/47 PASS** | Tự reset DB, tự bật server riêng cổng 4100 với Mock. Chạy xong nên `db:reset` |
 | Kiểu TypeScript | `cd app && npm run typecheck` · `cd web && npm run typecheck` · `cd backend && npm run typecheck` | 0 lỗi | |
+| Bộ test sprint-1 của nhóm (SCRUM-12/16/17/18 + final acceptance) | `cd app && node scripts/test-scrum12.mjs` … `node scripts/test-final-acceptance.mjs` | 78/79 PASS (17/11) | Script gọi Chrome theo đường dẫn cố định `C:/Program Files/Google/Chrome/Application/chrome.exe` — máy không có Chrome thì phần trình duyệt bị bỏ qua. T09 (SCRUM-12) còn kiểm tra key `phc_session` của localStorage cũ, nay phiên là cookie httpOnly |
 
 Tiêu chí app Customer: AC-01 khách chưa đăng nhập bị chặn · AC-02 Welcome → Login/Register · AC-03 lỗi Login ·
 AC-04 Login → Home · AC-05 Book a Ride → Services · AC-06 Continue tắt khi chưa chọn · AC-07 6 dịch vụ, chọn đúng 1 ·
 AC-08 Continue → Journey đúng dịch vụ · AC-09 Change → Journey cập nhật · AC-10 Home ↔ Profile · AC-11 Log Out ·
-AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Home · AC-15 không có Confirmation/Payment.
+AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Go to Login → Home · AC-15 không có Confirmation/Payment.
 
 ## 12. Kịch bản demo
 
@@ -392,7 +395,7 @@ Không commit `backend/.env` (chứa mật khẩu MySQL và key EmailJS — đã
 ## 14. Giới hạn hiện tại
 
 - Không có Booking Confirmation, Payment; không quản lý tài xế, doanh thu, điều phối xe (ngoài phạm vi).
-- Booking chỉ là **dữ liệu mẫu** trong MySQL — luồng đặt xe trong app Customer vẫn chỉ giữ dịch vụ đang chọn, chưa tạo booking.
+- Booking cho Contact Support / Staff Portal là **dữ liệu mẫu** trong MySQL; luồng Vehicle Size / Availability của app dùng dữ liệu đội xe giả lập phía trình duyệt, chưa ghi booking vào database.
 - `/support` không có nút dẫn tới từ màn cũ (yêu cầu không đổi UI) — phải gõ đường dẫn.
 - Staff Portal: chỉ 2 tài khoản seed, không có trang quản lý tài khoản / phân quyền; khách chưa trả lời lại được qua email (1 chiều).
 - Tab Activity / Alerts, các mục Profile (Personal Information, Saved Addresses, Payment Details), Forgot Password,

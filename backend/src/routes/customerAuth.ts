@@ -16,9 +16,9 @@ import { EmailQuery, LoginBody, RegisterBody, parseInput } from "../validation/a
 export const customerAuthRouter = Router();
 
 customerAuthRouter.post("/register", async (req, res) => {
-  const { id, user } = await registerCustomer(parseInput(RegisterBody, req.body));
-  const loggedInAt = startSession(res, "customer", id); // signed in straight away (P0-13)
-  res.status(201).json({ user: { ...user, loggedInAt: loggedInAt.toISOString() } });
+  // SCRUM-12 / decision P0-17: registering does NOT sign the customer in — they log in afterwards.
+  const { user } = await registerCustomer(parseInput(RegisterBody, req.body));
+  res.status(201).json({ user });
 });
 
 customerAuthRouter.post("/login", loginRateLimit("CUSTOMER", LOGIN_MESSAGES.locked), async (req, res) => {
