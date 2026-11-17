@@ -3,7 +3,7 @@
 Backend dùng chung cho **app Customer** (thư mục gốc repo) và **Staff Portal** (`web/`).
 Node.js + Express 5 + TypeScript (chạy bằng `tsx`) + MySQL 8.
 
-> Kế hoạch đầy đủ: [`../docs/STAFF_PORTAL_PLAN.md`](../docs/STAFF_PORTAL_PLAN.md). Trạng thái: **Phase 2 xong** (nền + đăng nhập).
+> Kế hoạch đầy đủ: [`../docs/STAFF_PORTAL_PLAN.md`](../docs/STAFF_PORTAL_PLAN.md). Trạng thái: **Phase 3 xong** (nền, đăng nhập, Enquiry, gửi email Mock/EmailJS).
 
 ## 1. Cài đặt
 
@@ -25,6 +25,7 @@ Tạo `JWT_SECRET` ngẫu nhiên: `node -e "console.log(require('crypto').random
 | `npm start` | Chạy server (không theo dõi file) |
 | `npm run typecheck` / `npm run build` | Kiểm tra kiểu TypeScript (server chạy trực tiếp bằng `tsx`, không xuất file JS) |
 | `npm run db:reset` | **Xoá sạch** database rồi tạo lại + seed (dùng trước mỗi buổi demo) |
+| `npm run smoke` | Kiểm thử API tự động (47 bước). **Tự reset DB**, tự bật server riêng ở cổng 4100 với Mock email. Chạy xong nên `db:reset` lại |
 
 `.env` không được commit. Server **không khởi động** nếu cấu hình sai (ví dụ `JWT_SECRET` còn giá trị mẫu) và không bao giờ in giá trị bí mật ra log.
 
@@ -101,7 +102,42 @@ Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyê
 
 Đăng ký chỉ lưu **4 số cuối thẻ**; không lưu số thẻ đầy đủ, CVV hay tên chủ thẻ. Mật khẩu băm bcrypt.
 
-## 6. Kiểm thử bằng curl (Phase 2)
+### Enquiry (Phase 3)
+
+| Method & path | Cần đăng nhập | Body / query | Trả về |
+|---|---|---|---|
+| `GET /api/customer/bookings` | customer | — | 200 `{ bookings: Booking[] }` — chỉ booking của chính khách |
+| `POST /api/customer/enquiries` | customer | `{ type: "GENERAL"\|"TRIP", bookingId?, subject, message }` | 201 `{ enquiry: { id, code, status, createdAt } }` · 400 (TRIP phải dùng booking **của chính khách**) |
+| `GET /api/customer/enquiries` | customer | — | 200 `{ enquiries: [{ id, code, type, subject, status, createdAt }] }` |
+| `GET /api/staff/enquiries` | staff | `type=ALL\|GENERAL\|TRIP` · `status=ALL\|AWAITING\|RESOLVED` · `q` (mã ENQ, tên, email, tiêu đề) · `sort=newest\|oldest` · `page` · `pageSize` (≤ 50) | 200 `{ items, page, pageSize, total, counts: { awaiting, resolved, general, trip } }` |
+| `GET /api/staff/enquiries/:id` | staff | — | 200 `{ enquiry, customer, booking \| null, responses, statusHistory }` · 404 |
+| `PATCH /api/staff/enquiries/:id/status` | staff | `{ status: "AWAITING"\|"RESOLVED" }` | 200 `{ enquiry }` (ghi lịch sử MANUAL nếu đổi thật) |
+| `POST /api/staff/enquiries/:id/responses` | staff | `{ clientRequestId (UUID), subject, body }` | 201 `{ response, enquiry }` · 502 `{ error: EMAIL_SEND_FAILED, response }` |
+| `POST /api/staff/responses/:responseId/retry` | staff | — | 200 `{ response, enquiry }` · 502 · 409 nếu không phải FAILED |
+| `GET /api/staff/email-settings` | staff | — | 200 `{ provider, testMode, testRecipient }` |
+
+`counts`: `awaiting/resolved` tính theo bộ lọc loại + tìm kiếm (bỏ qua lọc trạng thái); `general/trip` tính theo bộ lọc
+trạng thái + tìm kiếm (bỏ qua lọc loại) — để tab và dòng tóm tắt luôn cho biết mỗi lựa chọn có bao nhiêu mục.
+
+**Gửi phản hồi** (§7.4): lưu `PENDING` → gửi (tối đa 10 giây) → `SENT` và enquiry `AWAITING` tự thành `RESOLVED`
+(ghi lịch sử `AUTO_AFTER_RESPONSE`), hoặc `FAILED` kèm lỗi rút gọn và **giữ nguyên trạng thái** enquiry.
+Gửi lại cùng `clientRequestId` → trả bản ghi cũ, không gửi email lần nữa. Retry dùng lại đúng bản ghi đó.
+
+## 6. Chế độ gửi email
+
+| `.env` | Hành vi | Banner trên Staff Portal |
+|---|---|---|
+| `EMAIL_PROVIDER=MOCK` | **Không gửi email thật**, chỉ ghi log `[MOCK EMAIL] …`. `MOCK_EMAIL_FAIL=never\|always\|next` để ép lỗi (`next` = chỉ lỗi lần gửi kế tiếp) | "Mock email service" |
+| `EMAIL_PROVIDER=EMAILJS` + `EMAIL_TEST_MODE=true` | Gửi thật qua EmailJS nhưng **mọi email về `EMAIL_TEST_RECIPIENT`**, tiêu đề thêm `[TEST → <email khách>]` | "Test mode" |
+| `EMAIL_PROVIDER=EMAILJS` + `EMAIL_TEST_MODE=false` | Gửi thật tới email khách | (không có) |
+
+Server **dừng ngay khi khởi động** nếu chọn `EMAILJS` mà thiếu `EMAILJS_*`, hoặc test mode bật mà thiếu
+`EMAIL_TEST_RECIPIENT`. Với `MOCK`, test mode chỉ có tác dụng khi có điền `EMAIL_TEST_RECIPIENT` (quyết định P0-6).
+Private key EmailJS chỉ nằm trong `be/.env`, không bao giờ gửi ra trình duyệt hay ghi vào log/DB.
+
+Đổi `MOCK_EMAIL_FAIL` thì phải **khởi động lại** server (Ctrl + C rồi `npm run dev`).
+
+## 7. Kiểm thử bằng curl (Phase 2)
 
 Chạy trong **Git Bash** khi `npm run dev` đang chạy, nên `npm run db:reset` trước để dữ liệu sạch.
 (PowerShell: dùng `curl.exe` và đổi cách đặt dấu nháy cho JSON.)
@@ -142,4 +178,9 @@ curl -s $J -d '{"email":"james.patel@privatehire.test","password":"Staff@2026"}'
 ```
 
 Kết quả chạy thật ngày 17/11/2026: tất cả các lệnh trên trả đúng mã HTTP và câu thông báo như chú thích.
+
+Phần Enquiry + email (Phase 3) được kiểm bằng `npm run smoke`: **47/47 PASS** ngày 17/11/2026 — gồm enquiry TRIP với
+booking của người khác → 400; gửi phản hồi → SENT + tự RESOLVED + lịch sử `AUTO_AFTER_RESPONSE`;
+`MOCK_EMAIL_FAIL=always` → 502, FAILED, enquiry vẫn AWAITING → đổi `never` rồi retry → SENT; gửi trùng
+`clientRequestId` → không tạo bản ghi mới; lọc / tìm / sắp xếp / phân trang đúng số lượng.
 Mở khoá ngay: `npm run db:reset` (hoặc xoá dòng tương ứng trong bảng `login_attempts`).

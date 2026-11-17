@@ -9,7 +9,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "db:reset": "tsx scripts/db-reset.ts"
+    "db:reset": "tsx scripts/db-reset.ts",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

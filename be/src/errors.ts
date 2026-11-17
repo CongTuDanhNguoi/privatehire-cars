@@ -33,7 +33,8 @@ export class AppError extends Error {
   constructor(
     readonly code: ErrorCode,
     message: string,
-    readonly extra: { fields?: FieldErrors; minutesLeft?: number } = {},
+    // `response` is only used by EMAIL_SEND_FAILED (the saved FAILED response record).
+    readonly extra: { fields?: FieldErrors; minutesLeft?: number; response?: unknown } = {},
   ) {
     super(message);
     this.status = STATUS[code];
@@ -52,7 +53,11 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
-    res.status(err.status).json({ error: { code: err.code, message: err.message, ...err.extra } });
+    const { response, ...extra } = err.extra;
+    res.status(err.status).json({
+      error: { code: err.code, message: err.message, ...extra },
+      ...(response !== undefined ? { response } : {}),
+    });
     return;
   }
   // Malformed JSON body (thrown by express.json()).

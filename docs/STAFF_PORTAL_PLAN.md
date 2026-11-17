@@ -14,6 +14,8 @@
 > | P0-3 | `cardholderName` | Có trong body `POST /api/customer/auth/register`, server validate giống FE, **không lưu** DB. |
 > | P0-4 | Tên dịch vụ | Seed dùng tên trong app: **"Driver & Car Daily Hire"** (không phải "Daily Hire"). |
 > | P0-5 | Seed | `be/scripts/seed.ts` insert thẳng qua mysql2 (không sinh file `002_seed.sql`). |
+> | P0-6 | Test mode + MOCK | `EMAIL_TEST_RECIPIENT` chỉ **bắt buộc khi `EMAIL_PROVIDER=EMAILJS`**. MOCK + test mode mà trống địa chỉ → coi như tắt test mode (Mock không gửi gì). |
+> | P0-7 | Câu chữ bổ sung (Phase 3) | Enquiry khách > 2000 ký tự: `Message must be 2000 characters or fewer.` · enquiry GENERAL gửi kèm `bookingId` → bỏ qua, lưu `NULL` · retry bản không FAILED → 409 `Only responses that failed to send can be retried.` · gửi trùng `clientRequestId` khi bản cũ đang PENDING → 409. Luật form khách nằm ở `src/validation/enquiryValidation.ts` (dùng chung FE + BE), luật form phản hồi ở `be/src/validation/reply.ts`. |
 
 ---
 
