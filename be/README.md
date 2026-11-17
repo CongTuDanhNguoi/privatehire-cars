@@ -3,7 +3,9 @@
 Backend dùng chung cho **app Customer** (thư mục gốc repo) và **Staff Portal** (`web/`).
 Node.js + Express 5 + TypeScript (chạy bằng `tsx`) + MySQL 8.
 
-> Kế hoạch đầy đủ: [`../docs/STAFF_PORTAL_PLAN.md`](../docs/STAFF_PORTAL_PLAN.md). Trạng thái: **Phase 3 xong** (nền, đăng nhập, Enquiry, gửi email Mock/EmailJS).
+> Kế hoạch đầy đủ: [`../docs/STAFF_PORTAL_PLAN.md`](../docs/STAFF_PORTAL_PLAN.md). Trạng thái: **hoàn thành** (Phase 1–8).
+> Cách chạy cả hệ thống bằng Docker: [`../README.md`](../README.md#2-chạy-bằng-docker-khuyên-dùng).
+> Trong Docker, thay `npm run <lệnh>` bằng `docker compose exec be npm run <lệnh>` (ví dụ `db:reset`, `smoke`).
 
 ## 1. Cài đặt
 

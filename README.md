@@ -1,98 +1,138 @@
-# PrivateHire Cars — Frontend (Coded Interactive Prototype)
+# PrivateHire Cars — App Customer + Staff Portal + Backend
 
-Ứng dụng web dạng điện thoại (rộng **390 px**) mô phỏng app gọi xe riêng tại Vương quốc Anh, chuyển từ bản thiết kế
-Figma high-fidelity sang React chạy thật trên trình duyệt.
+Đồ án môn **UI Design** — mô phỏng app gọi xe riêng tại Vương quốc Anh. Repo gồm **3 phần chạy thật**, dùng chung một backend và database:
 
-- Đồ án môn **UI Design** — phương án **Option B: Coded Interactive Prototype**.
-- Thiết kế Figma: <https://www.figma.com/design/vcCuk3p2GNdtuF0u3dHFPo/PrivateHire-Cars> (page *Interactive Prototype*).
-- **Chưa có backend thật**: dữ liệu là mock data, đăng nhập/đăng ký là *simulated authentication* lưu trong
-  `localStorage` của trình duyệt. Backend thật (Node + Express + SQLite) đang được thiết kế ở repo riêng.
-- Tự kiểm thử tự động: **15/15 tiêu chí nghiệm thu PASS** (`npm run selftest`).
+| Phần | Thư mục | Cổng | Mô tả |
+|---|---|---|---|
+| **App Customer** | gốc repo (`src/`) | 5173 | Web dạng điện thoại 390 px, chuyển từ Figma (Option B — Coded Interactive Prototype) |
+| **Staff Portal** | `web/` | 5174 | Web desktop cho nhân viên quản lý câu hỏi của khách (Enquiry Management) |
+| **Backend** | `be/` | 4000 | Node.js + Express + TypeScript + **MySQL 8**, dùng chung cho cả hai app |
 
-> ### 🐳 Đang phát triển trên nhánh `feature/staff-portal`: Staff Portal + Backend + Docker
-> Repo đang được mở rộng thành 3 phần: app Customer (thư mục gốc), **Staff Portal** (`web/`) và **backend dùng chung**
-> (`be/`, Express + MySQL). Chạy cả hệ thống bằng Docker Desktop:
->
-> ```bash
-> docker compose up -d
-> ```
->
-> App Customer <http://localhost:5173> · Staff Portal <http://localhost:5174> (`sarah.collins@privatehire.test` / `Staff@2026`)
-> · API <http://localhost:4000/api/health> · MySQL `localhost:3307` (root / `privatehire`).
-> Xem `docker-compose.yml`, [`be/README.md`](be/README.md) và [`docs/STAFF_PORTAL_PLAN.md`](docs/STAFF_PORTAL_PLAN.md).
-> README đầy đủ sẽ được cập nhật ở Phase 8.
+- Thiết kế Figma (app Customer): <https://www.figma.com/design/vcCuk3p2GNdtuF0u3dHFPo/PrivateHire-Cars>
+- Kế hoạch + mọi quyết định đã chốt: [`docs/STAFF_PORTAL_PLAN.md`](docs/STAFF_PORTAL_PLAN.md) (bảng P0-x ở đầu file ưu tiên hơn nội dung bên dưới)
+- API + lệnh curl: [`be/README.md`](be/README.md) · Gửi email thật: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md)
+- Kiểm thử tự động: app Customer **15/15 PASS** · Staff Portal **10/10 PASS** · API **47/47 PASS**
 
 ---
 
 ## Mục lục
 
-1. [Công nghệ](#1-công-nghệ)
-2. [Cài đặt và chạy](#2-cài-đặt-và-chạy)
-3. [Các lệnh npm](#3-các-lệnh-npm)
+1. [Kiến trúc](#1-kiến-trúc)
+2. [Chạy bằng Docker (khuyên dùng)](#2-chạy-bằng-docker-khuyên-dùng)
+3. [Chạy không dùng Docker](#3-chạy-không-dùng-docker)
 4. [Tài khoản demo và dữ liệu mẫu](#4-tài-khoản-demo-và-dữ-liệu-mẫu)
-5. [Luồng màn hình và route](#5-luồng-màn-hình-và-route)
-6. [Cấu trúc thư mục](#6-cấu-trúc-thư-mục)
-7. [Quy tắc kiểm tra dữ liệu nhập](#7-quy-tắc-kiểm-tra-dữ-liệu-nhập)
-8. [Đăng nhập giả lập (simulated auth)](#8-đăng-nhập-giả-lập-simulated-auth)
-9. [Figma → code: cách làm việc](#9-figma--code-cách-làm-việc)
-10. [Self-test và tiêu chí nghiệm thu](#10-self-test-và-tiêu-chí-nghiệm-thu)
-11. [Quy trình Git (nhánh main / dev)](#11-quy-trình-git-nhánh-main--dev)
-12. [Giới hạn hiện tại và hướng phát triển](#12-giới-hạn-hiện-tại-và-hướng-phát-triển)
-13. [Xử lý sự cố thường gặp](#13-xử-lý-sự-cố-thường-gặp)
+5. [Gửi email: Mock / EmailJS / Test mode](#5-gửi-email-mock--emailjs--test-mode)
+6. [App Customer: màn hình và route](#6-app-customer-màn-hình-và-route)
+7. [Staff Portal: chức năng](#7-staff-portal-chức-năng)
+8. [Cấu trúc thư mục](#8-cấu-trúc-thư-mục)
+9. [Quy tắc kiểm tra dữ liệu nhập](#9-quy-tắc-kiểm-tra-dữ-liệu-nhập)
+10. [Figma → code (app Customer)](#10-figma--code-app-customer)
+11. [Kiểm thử tự động](#11-kiểm-thử-tự-động)
+12. [Kịch bản demo](#12-kịch-bản-demo)
+13. [Quy trình Git](#13-quy-trình-git)
+14. [Giới hạn hiện tại](#14-giới-hạn-hiện-tại)
+15. [Xử lý sự cố](#15-xử-lý-sự-cố)
 
 ---
 
-## 1. Công nghệ
+## 1. Kiến trúc
+
+```
+App Customer (Vite :5173, mobile)          Staff Portal (Vite :5174, desktop)
+        │  /api/customer/*                          │  /api/staff/*
+        └────────────── Vite proxy /api ────────────┘
+                              ▼
+                be/  Express + TypeScript :4000 ──► EmailJS REST API (email thật, gọi từ server)
+                cookie phc_customer / phc_staff ──► MockEmailProvider (không gửi thật)
+                              ▼
+                       MySQL 8 (database: privatehire)
+```
+
+- Hai app gọi API qua **proxy của Vite** nên cookie là cùng nguồn, không cần CORS.
+- Hai loại phiên **tách biệt**: cookie `phc_customer` (khách) và `phc_staff` (nhân viên), JWT httpOnly, hết hạn 8 giờ.
+- Email được gửi **từ backend**: Private Key EmailJS không bao giờ ra trình duyệt; mỗi lần gửi được lưu lịch sử + kết quả.
 
 | Hạng mục | Lựa chọn |
 |---|---|
-| Framework | React 19 + TypeScript (bật `strict`) |
-| Build tool | Vite 7 |
-| Giao diện | Tailwind CSS v4 qua `@tailwindcss/vite` (không có `tailwind.config.js`, theme đặt trong `src/index.css`) |
-| Điều hướng | react-router-dom 7 (`BrowserRouter`) |
-| Form | `useState` thuần (không dùng thư viện form) |
-| "Backend" | Giả lập trong `src/services/auth.ts`, lưu `localStorage` |
-| Kiểm thử | Playwright (script `scripts/selftest.mjs`) |
-| Font | Plus Jakarta Sans (Login), Inter (các màn còn lại), Liberation Sans → Arial (thanh điều hướng Home) |
+| Frontend (cả hai app) | React 19 + TypeScript strict + Vite 7 + Tailwind CSS v4 + react-router-dom 7 |
+| Backend | Express 5, mysql2, bcryptjs, jsonwebtoken, zod, chạy bằng `tsx` |
+| Database | MySQL 8, giờ lưu UTC |
+| Email | EmailJS (thật) hoặc Mock (giả lập), Test mode chuyển mọi email về 1 hộp thư |
+| Kiểm thử | Playwright (2 app) + smoke test API |
+| Chạy | Docker Compose (MySQL + be + web + app) |
 
-## 2. Cài đặt và chạy
+## 2. Chạy bằng Docker (khuyên dùng)
 
-**Yêu cầu:** Node.js **≥ 20.19** (Vite 7 yêu cầu; khuyên dùng bản LTS mới nhất). Kiểm tra bằng `node -v` và `npm -v`.
+**Yêu cầu:** Docker Desktop đang chạy (góc dưới cửa sổ Docker Desktop hiện *Engine running*).
 
 ```bash
 git clone https://github.com/CongTuDanhNguoi/privatehire-react-fe.git
 cd privatehire-react-fe
-npm install
-npm run dev
+docker compose up -d
 ```
 
-Mở <http://localhost:5173>.
+Lần đầu mất vài phút (tải image + cài thư viện). Sau đó mở:
 
-**Xem như trên điện thoại:** F12 → *Toggle device toolbar* (Ctrl + Shift + M) → chọn **iPhone 12 Pro**.
+| Địa chỉ | Là gì |
+|---|---|
+| <http://localhost:5173> | App Customer (bật F12 → Ctrl + Shift + M → iPhone 12 Pro để xem như điện thoại) |
+| <http://localhost:5174> | Staff Portal |
+| <http://localhost:4000/api/health> | Kiểm tra backend + database (`{"status":"ok","database":"up"}`) |
+| `localhost:3307` | MySQL (user `root`, mật khẩu `privatehire`) — cổng 3307 để không đụng MySQL cài trên máy |
 
-> Ảnh và icon Figma đã được tải sẵn vào `public/figma-assets/`, không cần chạy `npm run figma-assets` nữa
-> (chỉ chạy lại khi thêm màn Figma mới).
-
-## 3. Các lệnh npm
+Database được **tự tạo + nạp dữ liệu mẫu** ở lần chạy đầu (`db:init`), các lần sau giữ nguyên dữ liệu.
 
 | Lệnh | Tác dụng |
 |---|---|
-| `npm run dev` | Chạy server phát triển tại <http://localhost:5173> (tự tải lại khi sửa code) |
-| `npm run typecheck` | Kiểm tra kiểu TypeScript (`tsc --noEmit`) — phải ra 0 lỗi |
-| `npm run build` | Typecheck + build bản production vào `dist/` |
-| `npm run preview` | Chạy thử bản đã build |
-| `npm run selftest` | Chạy self-test Playwright (cần `npm run dev` đang chạy, xem [mục 10](#10-self-test-và-tiêu-chí-nghiệm-thu)) |
-| `npm run figma-assets` | Tải ảnh/icon mà code Figma trỏ tới về `public/figma-assets/` và đổi đường dẫn sang file trên máy |
+| `docker compose up -d` | Bật cả hệ thống |
+| `docker compose ps` | Xem trạng thái 4 container (`db`, `be`, `web`, `app`) |
+| `docker compose logs -f be` | Xem log backend (email Mock được in ở đây) |
+| `docker compose exec be npm run db:reset` | **Xoá sạch** dữ liệu rồi nạp lại dữ liệu mẫu — chạy trước mỗi buổi demo |
+| `docker compose up -d --force-recreate be` | Khởi động lại backend sau khi sửa `be/.env` |
+| `docker compose down` | Tắt (dữ liệu vẫn giữ) |
+| `docker compose down -v` | Tắt **và xoá** database + thư viện đã cài |
+
+Mã nguồn được gắn thẳng vào container nên sửa code không cần build lại image.
+Cấu hình email đọc từ `be/.env` nếu có (xem [mục 5](#5-gửi-email-mock--emailjs--test-mode)); không có file này thì mặc định Mock.
+
+## 3. Chạy không dùng Docker
+
+Yêu cầu: Node.js ≥ 20.19 và MySQL 8 cài trên máy. Mỗi phần có `package.json` riêng, mở **3 terminal**:
+
+```bash
+# Terminal 1 — backend
+cd be
+npm install
+cp .env.example .env        # điền DB_PASSWORD (MySQL của máy) và JWT_SECRET (chuỗi ngẫu nhiên ≥ 32 ký tự)
+npm run db:reset            # tạo database + dữ liệu mẫu
+npm run dev                 # http://localhost:4000
+
+# Terminal 2 — app Customer
+npm install
+npm run dev                 # http://localhost:5173
+
+# Terminal 3 — Staff Portal
+cd web
+npm install
+npm run dev                 # http://localhost:5174
+```
 
 ## 4. Tài khoản demo và dữ liệu mẫu
 
-Tài khoản được tạo sẵn mỗi lần mở app (`seedDemoAccount()` trong `src/main.tsx`):
+Mật khẩu được băm bcrypt khi nạp dữ liệu, không lưu dạng thô.
 
-| Email | Mật khẩu |
-|---|---|
-| `alex.morgan@example.com` | `Password123` |
+| Loại | Email | Mật khẩu | Dùng ở |
+|---|---|---|---|
+| Nhân viên | `sarah.collins@privatehire.test` | `Staff@2026` | Staff Portal |
+| Nhân viên | `james.patel@privatehire.test` | `Staff@2026` | Staff Portal |
+| Khách | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
+| Khách | `emily.clarke@example.com` | `Password123` | App Customer (chuyến PHC-24053) |
+| Khách | `daniel.brooks@example.com` | `Password123` | App Customer (chuyến PHC-24054) |
 
-**Dữ liệu hợp lệ để điền nhanh form Đăng ký** (chỉ là dữ liệu test, không phải thẻ thật):
+Dữ liệu mẫu có **7 enquiry** (General + Trip, Awaiting + Resolved) và **3 phản hồi**, trong đó 1 phản hồi **Failed**
+(ENQ-000001) để demo nút **Retry**. Staff Portal không có trang đăng ký nhân viên (theo kế hoạch: tài khoản seed sẵn).
+
+**Dữ liệu hợp lệ để điền nhanh form Đăng ký** (dữ liệu test, không phải thẻ thật):
 
 | Ô | Giá trị |
 |---|---|
@@ -105,9 +145,21 @@ Tài khoản được tạo sẵn mỗi lần mở app (`seedDemoAccount()` tron
 | CVV / CVC | `123` |
 | Password / Confirm Password | `Password123` |
 
-**Xoá dữ liệu demo:** F12 → *Application* → *Local Storage* và *Session Storage* → xoá các key `phc_*` → F5.
+## 5. Gửi email: Mock / EmailJS / Test mode
 
-## 5. Luồng màn hình và route
+Đặt trong `be/.env`, rồi `docker compose up -d --force-recreate be`:
+
+| Muốn | `be/.env` | Staff Portal hiện |
+|---|---|---|
+| Demo không gửi email thật (mặc định) | `EMAIL_PROVIDER=MOCK` | Banner "Mock email service — responses are saved but NO real email is sent." |
+| Gửi thật nhưng chỉ tới hộp thư nhóm | `EMAIL_PROVIDER=EMAILJS`, `EMAIL_TEST_MODE=true`, `EMAIL_TEST_RECIPIENT=<hộp thư>` | Banner "Test mode — all emails are delivered to …"; tiêu đề email có tiền tố `[TEST → <email khách>]` |
+| Gửi thật tới khách | `EMAIL_PROVIDER=EMAILJS`, `EMAIL_TEST_MODE=false` | (không có banner) |
+| Demo nút Retry với Mock | thêm `MOCK_EMAIL_FAIL=next` (lần gửi kế tiếp thất bại) hoặc `always` | |
+
+Cài EmailJS từng bước: [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md). Backend **dừng ngay khi khởi động** nếu chọn
+EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận — xem lỗi bằng `docker compose logs be`.
+
+## 6. App Customer: màn hình và route
 
 ```
 Welcome ──Log In──► Login ──đúng──────────────────────────────────► Home
@@ -117,6 +169,7 @@ Home ──Book a Ride / View All Services──► Service Selection ──Cont
                                               ▲                               │
                                               └──────────── Change ───────────┘
 Home ──tab Profile──► My Profile ──Log Out──► Login
+(gõ đường dẫn) /support ──► Contact Support: gửi câu hỏi + My enquiries
 ```
 
 | Đường dẫn | Màn | Quyền truy cập |
@@ -129,75 +182,88 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 | `/services` | Service Selection | **Bắt buộc đăng nhập** |
 | `/journey` | Journey Details | **Bắt buộc đăng nhập** + đã chọn dịch vụ (chưa chọn → `/services`) |
 | `/profile` | My Profile | **Bắt buộc đăng nhập** |
+| `/support` | **Contact Support** (gửi enquiry + danh sách "My enquiries") | **Bắt buộc đăng nhập** — **không có nút dẫn tới**, gõ thẳng `localhost:5173/support` |
 | `/gallery`, `/gallery/:slug` | Xem các màn Figma tĩnh chưa nối luồng | Ai cũng xem được |
 | `*` | → `/` | |
 
-- Chưa đăng nhập mà vào `/home`, `/services`, `/journey`, `/profile` → bị chuyển về `/login` (`RequireAuth`).
+- Đăng nhập / đăng ký lưu trong **MySQL** qua API (`src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
+  Phiên là cookie httpOnly; `getCurrentUser()` đọc bộ nhớ đệm được nạp bằng `initSession()` khi mở app.
+- Đăng ký xong được **đăng nhập luôn** (giữ nguyên màn Registration Complete → "Go to Home").
+- Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
+- Sai mật khẩu 5 lần liên tiếp → khoá 15 phút (lưu ở server).
+- **Giao diện các màn có sẵn không đổi** so với bản trước (yêu cầu của nhóm); `/support` là màn mới.
 - **Không có** màn Booking Confirmation / Payment — đúng phạm vi đồ án.
-- Dịch vụ đang chọn được giữ trong `sessionStorage`, nên F5 không bị mất. Log Out sẽ xoá lựa chọn này.
 
-**6 dịch vụ** (`src/data/services.ts`): Local Travel · Long-Distance · Airport Transfer · Hotel Transfer ·
-Airport Meet & Greet · Driver & Car Daily Hire. Mỗi lần chỉ chọn được **một**; nút **Continue** bị tắt cho tới khi chọn.
+**Contact Support (`/support`)**: chọn *General enquiry* hoặc *About a trip* (chọn 1 chuyến của chính mình, giờ hiển thị
+theo giờ UK), nhập Subject + Message → **Send enquiry** → hiện mã **ENQ-xxxxxx**. Câu hỏi xuất hiện ngay trong Inbox
+của Staff Portal; khi nhân viên trả lời, "My enquiries" hiện **Resolved**.
 
-## 6. Cấu trúc thư mục
+## 7. Staff Portal: chức năng
+
+| Trang | Chức năng |
+|---|---|
+| `/login` | Đăng nhập nhân viên (báo lỗi để trống / sai định dạng / sai mật khẩu / bị khoá), Show/Hide mật khẩu |
+| `/enquiries` | **Inbox**: lọc loại (All / General / Trip-specific, có số đếm), lọc trạng thái (mặc định **Awaiting**), tìm theo mã ENQ / tên / email / tiêu đề, sắp xếp, phân trang, Refresh. Bộ lọc lưu trên URL |
+| `/enquiries/:id` | **Detail**: thông tin khách (copy email), nội dung câu hỏi, **Trip details** (chỉ enquiry loại Trip, giờ UK), đổi trạng thái **Awaiting ⇄ Resolved**, soạn + gửi phản hồi, **Response history** (Sent / Failed / Pending, Retry), Status history |
+
+- Gửi thành công → phản hồi **Sent**, enquiry **tự chuyển Resolved**. Gửi thất bại → lưu **Failed**, giữ nội dung đang soạn, có nút **Retry**.
+- Bản nháp lưu theo từng enquiry; rời trang khi còn nháp → hỏi "Discard your unsent response?".
+- Bấm gửi 2 lần / mất mạng giữa chừng không tạo email trùng (mỗi lần gửi có `clientRequestId`).
+- Mất kết nối server → "Can't reach the server…" + Try again; hết phiên → về Login với thông báo.
+- Trang `/ui-kit` (chỉ khi chạy dev) hiển thị toàn bộ component + màu + cỡ chữ của UI Kit để đối chiếu.
+
+## 8. Cấu trúc thư mục
 
 ```
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── public/
-│   └── figma-assets/            ảnh + icon tải từ Figma (sinh bởi npm run figma-assets)
+├── docker-compose.yml         MySQL + be + web + app (chế độ dev)
+├── docs/
+│   ├── STAFF_PORTAL_PLAN.md   kế hoạch + bảng quyết định P0-x
+│   └── EMAILJS_SETUP.md       hướng dẫn cài email thật
+├── be/                        BACKEND (xem be/README.md)
+│   ├── sql/001_schema.sql     7 bảng MySQL
+│   ├── scripts/               db-reset, db-init, seed, smoke-test
+│   └── src/                   config, db, errors, middleware, routes, services, email/, validation/
+├── web/                       STAFF PORTAL
+│   ├── scripts/selftest.mjs   self-test Playwright (10 bước)
+│   └── src/
+│       ├── api/               client (lỗi chuẩn hoá) + enquiries + staff
+│       ├── auth/              AuthContext, RequireStaff / GuestOnly
+│       ├── components/ui/     Button, Field, Badge, Alert, Card, Segmented, ConfirmDialog, Toast, Spinner, CopyButton…
+│       ├── components/layout/ AppShell, TopBar, banner email
+│       ├── features/enquiries/ bảng Inbox, thẻ thông tin, ô soạn phản hồi, lịch sử, bản nháp
+│       └── pages/             Login, Inbox, EnquiryDetail, NotFound, UiKit
+├── index.html, package.json, vite.config.ts (proxy /api)   ← APP CUSTOMER
+├── public/figma-assets/       ảnh + icon tải từ Figma
 ├── scripts/
-│   ├── download-figma-assets.mjs tải ảnh Figma về máy và đổi đường dẫn trong code
-│   └── selftest.mjs             self-test Playwright theo 15 tiêu chí nghiệm thu
+│   ├── download-figma-assets.mjs
+│   └── selftest.mjs           self-test Playwright 15 tiêu chí
 └── src/
-    ├── main.tsx                 khởi động: BrowserRouter + BookingProvider + seedDemoAccount()
-    ├── App.tsx                  khai báo route + chặn quyền truy cập
-    ├── index.css                Tailwind + theme
-    ├── assets/logo.png
-    ├── components/
-    │   ├── RouteGuards.tsx      RequireAuth (bắt đăng nhập), GuestOnly (chỉ khách)
-    │   ├── FigmaClickable.tsx   gắn hành động bấm vào code Figma theo data-node-id
-    │   ├── BottomNav.tsx        thanh tab Home / Activity / Alerts / Profile
-    │   ├── Icon.tsx             bộ icon nét (kiểu lucide) vẽ inline
-    │   └── MobileFrame.tsx      khung điện thoại 390 px ở giữa màn hình
-    ├── context/
-    │   └── BookingContext.tsx   dịch vụ đang chọn (useBooking), lưu sessionStorage
-    ├── data/
-    │   └── services.ts          mock data 6 dịch vụ
+    ├── main.tsx               initSession() rồi mới vẽ app
+    ├── App.tsx                route + chặn quyền truy cập
+    ├── components/            RouteGuards, FigmaClickable, BottomNav, Icon, MobileFrame
+    ├── context/BookingContext.tsx   dịch vụ đang chọn (sessionStorage)
+    ├── data/services.ts       6 dịch vụ
     ├── services/
-    │   └── auth.ts              đăng nhập giả lập (localStorage)
-    ├── validation/
-    │   ├── rules.ts             mỗi ô nhập một hàm kiểm tra → "" hoặc câu báo lỗi
-    │   ├── loginValidation.ts   kiểm tra form Login
-    │   ├── registerValidation.ts kiểm tra form Registration
-    │   └── format.ts            tự định dạng khi gõ (số thẻ, ngày hết hạn)
-    ├── pages/                   các màn chạy thật
-    │   ├── WelcomePage.tsx      code Figma gốc + FigmaClickable
-    │   ├── HomePage.tsx         code Figma gốc + FigmaClickable
-    │   ├── LoginPage.tsx        chép code Figma + ô nhập, state, báo lỗi
-    │   ├── JourneyDetailsPage.tsx chép code Figma + dịch vụ hiển thị động
-    │   ├── RegisterPage.tsx     dựng theo ảnh thiết kế
-    │   ├── RegistrationCompletePage.tsx
-    │   ├── ServiceSelectionPage.tsx
-    │   ├── ProfilePage.tsx
-    │   └── GalleryPage.tsx      xem các màn Figma tĩnh
-    ├── screens/                 ⚠️ code Figma xuất ra — KHÔNG sửa tay
-    └── manifest/                danh sách màn Figma đã xuất (dùng cho /gallery)
+    │   ├── auth.ts            đăng nhập / đăng ký qua API
+    │   └── support.ts         bookings, gửi enquiry, My enquiries
+    ├── validation/            rules, loginValidation, registerValidation, enquiryValidation, format
+    ├── pages/                 Welcome, Login, Register, RegistrationComplete, Home, ServiceSelection,
+    │                          JourneyDetails, Profile, Support, Gallery
+    ├── screens/               ⚠️ code Figma xuất ra — KHÔNG sửa tay
+    └── manifest/              danh sách màn Figma (dùng cho /gallery)
 ```
 
-## 7. Quy tắc kiểm tra dữ liệu nhập
+Luật kiểm tra dữ liệu được **dùng chung** giữa frontend và backend để câu báo lỗi luôn giống nhau:
+`src/validation/*` (app Customer ↔ be), `be/src/validation/staffLogin.ts` và `reply.ts` (be ↔ Staff Portal).
 
-Nguồn chuẩn: `src/validation/rules.ts`. Câu báo lỗi là **yêu cầu của đề** — không sửa chữ, không thêm dấu câu.
+## 9. Quy tắc kiểm tra dữ liệu nhập
 
-**Khi nào báo lỗi**
-- Lỗi định dạng: khi rời ô (nếu ô không trống) và khi bấm nút gửi.
-- Lỗi bỏ trống: chỉ khi bấm nút gửi.
-- Lỗi từ "server" (sai mật khẩu, email trùng, bị khoá): chỉ sau khi gửi.
-- Gõ lại vào ô sẽ xoá lỗi của ô đó. Khoảng trắng đầu/cuối được bỏ qua.
+Câu báo lỗi là **yêu cầu của đề** — không sửa chữ, không thêm dấu câu.
 
-### Login
+**Khi nào báo lỗi:** lỗi định dạng khi rời ô (nếu ô không trống) và khi bấm gửi; lỗi bỏ trống chỉ khi bấm gửi;
+lỗi từ server (sai mật khẩu, email trùng, bị khoá) sau khi gửi; gõ lại vào ô sẽ xoá lỗi của ô đó.
+
+### App Customer — Login
 
 | Ô | Trường hợp | Câu báo lỗi |
 |---|---|---|
@@ -206,61 +272,51 @@ Nguồn chuẩn: `src/validation/rules.ts`. Câu báo lỗi là **yêu cầu c�
 | Email | sai định dạng | `Please enter a valid email address.` |
 | Password | bỏ trống | `Password is required.` |
 | — | sai email **hoặc** mật khẩu (không nói rõ cái nào) | `Incorrect email or password. Please try again.` |
-| — | sai 5 lần liên tiếp cùng email | `Too many attempts. Please try again in 15 minutes.` (khoá 15 phút) |
+| — | sai 5 lần liên tiếp cùng email | `Too many attempts. Please try again in 15 minutes.` |
+| — | không kết nối được server | `Can't reach the server. Check your connection and try again.` |
 
-### Registration
+### App Customer — Registration
 
 | Ô | Quy tắc → câu báo lỗi |
 |---|---|
 | Full Name | trống → `Full name is required.` · < 2 ký tự → `Name must be at least 2 characters.` · > 50 → `Name must be 50 characters or fewer.` · có số/ký hiệu → `Name can only contain letters, spaces, hyphens and apostrophes.` |
-| Email | như Login + đã đăng ký → `This email address is already registered. Please use a different email or log in.` |
+| Email | như Login + đã đăng ký (khi bấm Create Account) → `This email address is already registered. Please use a different email or log in.` |
 | Home Address | trống → `Home address is required.` (nhập gì cũng được) |
 | Phone Number | trống → `Phone number is required.` · không phải số → `Phone number can only contain digits.` (mọi quốc gia; bỏ qua dấu cách, `-`, `()`, dấu `+` ở đầu) |
 | Cardholder Name | như Full Name, trống → `Cardholder name is required.` |
-| Card Number | trống → `Card number is required.` · không phải số → `Card number can only contain digits.` · < 13 số → `Card number is incomplete.` · > 19 số → `Card number is invalid.` (không kiểm tra Luhn) |
+| Card Number | trống → `Card number is required.` · không phải số → `Card number can only contain digits.` · < 13 số → `Card number is incomplete.` · > 19 số → `Card number is invalid.` |
 | Expiry Date | trống → `Expiry date is required.` · sai dạng → `Use the format MM/YY.` · tháng sai → `Invalid month.` · đã qua → `Card has expired` |
-| CVV / CVC | trống → `CVV is required.` · không phải số → `CVV can only contain digits.` · sai độ dài → `CVV must be 3 digits.` (thẻ Amex bắt đầu 34/37 cần 4 số) |
+| CVV / CVC | trống → `CVV is required.` · không phải số → `CVV can only contain digits.` · sai độ dài → `CVV must be 3 digits.` (Amex 34/37 cần 4 số) |
 | Password | trống → `Password is required.` · < 8 → `Password must be at least 8 characters.` · thiếu chữ hoa → `Password must include an uppercase letter.` · thiếu số → `Password must include a number.` · trùng email → `Password cannot be the same as your email.` |
 | Confirm Password | trống → `Please confirm your password.` · không khớp → `Passwords do not match.` |
 
-**Tự định dạng khi gõ** (`src/validation/format.ts`)
-- Số thẻ: chỉ nhận chữ số, tối đa 19 số, tự cách nhóm 4 số → `4242 4242 4242 4242`.
-- Ngày hết hạn: tự thêm `/`; `5` → `05/`; `13` → `01/3` (tháng không vượt quá 12); gõ năm 4 số `12/2028` → `12/28`.
+Tự định dạng khi gõ: số thẻ cách nhóm 4 số (tối đa 19 số); ngày hết hạn tự thêm `/`, tháng không vượt 12, `12/2028` → `12/28`.
+Server chỉ lưu **4 số cuối thẻ** — không lưu số thẻ đầy đủ, CVV hay tên chủ thẻ.
 
-## 8. Đăng nhập giả lập (simulated auth)
+### App Customer — Contact Support
 
-File `src/services/auth.ts` đóng vai trò "server". Các màn hình chỉ gọi những hàm dưới đây, nên khi có backend thật
-chỉ cần thay **thân hàm** bằng `fetch("/api/...")` và giữ nguyên kiểu trả về — các page không phải sửa.
-
-| Hàm | Trả về |
+| Ô | Câu báo lỗi |
 |---|---|
-| `seedDemoAccount()` | `Promise<void>` — tạo tài khoản demo nếu chưa có |
-| `isEmailRegistered(email)` | `boolean` (không phân biệt hoa/thường) |
-| `registerUser(form)` | `{ ok: true, user }` (tự đăng nhập luôn) · `{ ok: false, errors }` |
-| `loginUser(email, password)` | `{ ok: true, user }` · `{ ok: false, reason: "invalid" }` · `{ ok: false, reason: "locked", minutesLeft }` |
-| `getCurrentUser()` | `{ email, fullName, loggedInAt }` hoặc `null` |
-| `logout()` | `void` |
+| Loại | `Choose an enquiry type.` |
+| Chuyến (khi "About a trip") | `Choose the trip this enquiry is about.` |
+| Subject (5–120 ký tự) | `Subject is required.` · `Subject must be between 5 and 120 characters.` |
+| Message (20–2000 ký tự) | `Message is required.` · `Please describe your enquiry in at least 20 characters.` · `Message must be 2000 characters or fewer.` |
 
-| Key lưu trữ | Nơi lưu | Nội dung |
-|---|---|---|
-| `phc_users` | localStorage | danh sách tài khoản |
-| `phc_login_attempts` | localStorage | số lần sai + thời điểm hết khoá theo email |
-| `phc_session` | localStorage | người đang đăng nhập |
-| `phc_selected_service` | sessionStorage | dịch vụ đang chọn |
+### Staff Portal
 
-**Bảo mật (mức demo):** mật khẩu được băm SHA-256 trước khi lưu (nếu mở bằng `http://<IP máy>` thì dùng hàm băm
-dự phòng vì `crypto.subtle` chỉ có trên localhost/https). **Không** lưu số thẻ đầy đủ và CVV — chỉ lưu 4 số cuối.
-Đây chỉ là mô phỏng, không dùng cho dữ liệu thật.
+| Form | Câu báo lỗi |
+|---|---|
+| Login | `Email address is required.` · `Enter a valid email address.` · `Password is required.` · `Incorrect email or password.` · `Too many failed attempts. Try again in N minutes.` |
+| Phản hồi — Subject (3–150) | `Subject is required.` · `Subject must be between 3 and 150 characters.` |
+| Phản hồi — Message (10–5000) | `Message is required.` · `Message must be at least 10 characters.` · `Message must be 5000 characters or fewer.` |
 
-## 9. Figma → code: cách làm việc
+## 10. Figma → code (app Customer)
 
 | Màn | Làm từ | Muốn sửa thì |
 |---|---|---|
 | Welcome, Home | code Figma trong `src/screens/**` bọc bởi `FigmaClickable` | chỉ thêm/sửa hành động trong `actions` của page |
 | Login, Journey Details | bản chép code Figma trong `src/pages/` + state | chỉ sửa phần động, giữ class và `data-node-id` |
-| Registration, Registration Complete, Service Selection, Profile | dựng tay theo ảnh thiết kế | giữ màu/khoảng cách đang dùng |
-
-**Gắn hành động bấm vào code Figma mà không sửa code Figma:**
+| Registration, Registration Complete, Service Selection, Profile, Contact Support | dựng tay theo ảnh thiết kế | giữ màu/khoảng cách đang dùng |
 
 ```tsx
 <FigmaClickable actions={{ "6:1101": () => navigate("/services") }}>
@@ -268,101 +324,82 @@ dự phòng vì `crypto.subtle` chỉ có trên localhost/https). **Không** lư
 </FigmaClickable>
 ```
 
-`"6:1101"` là `data-node-id` của nút trong code Figma (tìm theo `data-name` hoặc chữ hiển thị trong file screen).
+**Không được xoá hoặc đổi tên:** `data-node-id` (FigmaClickable dùng), `data-testid` (self-test dùng) và `id` các ô nhập.
 
-**Màu dùng chung:** navy `#0b2341` · link `#0284c7` · tab đang chọn `#2563eb` · lỗi `#ef4444` / chữ lỗi `#dc2626` ·
-chữ `#0f172a` / `#1e293b` · chữ phụ `#64748b` · chữ mờ `#94a3b8` · viền `#cbd5e1` / `#e2e8f0` · nền trang `#f1f5f9`.
+Staff Portal **không** dùng Figma: giao diện tự thiết kế theo UI Kit PrivateHire Cars (màu `ink #02284F`, `primary #65B3FC`,
+font Inter, cỡ chữ 28/20/16/14/12) — xem `web/src/index.css` và trang `/ui-kit`.
 
-**Thêm một màn Figma mới:**
-1. Đặt file `.tsx` vào `src/screens/<nhóm>/` (không sửa markup sau đó).
-2. Thêm vào `src/manifest/<nhóm>.json`.
-3. Chuẩn hoá font: `font-['Family:Weight']` → `font-['Family',sans-serif]`.
-4. Chạy `npm run figma-assets`, rồi nối hành động từ một page trong `src/pages/`.
+## 11. Kiểm thử tự động
 
-**Không được xoá hoặc đổi tên:** thuộc tính `data-node-id` (FigmaClickable dùng), `data-testid` (self-test dùng),
-và các `id` ô nhập (`#email`, `#password`, `#fullName`, `#cardNumber`, `#expiry`, …).
+Chạy khi hệ thống đang bật (`docker compose up -d`). Lần đầu cần tải trình duyệt test: `npx playwright install chromium`.
 
-## 10. Self-test và tiêu chí nghiệm thu
+| Bộ test | Lệnh | Kết quả mong đợi | Ghi chú |
+|---|---|---|---|
+| App Customer (15 tiêu chí AC-01…AC-15) | `npm run selftest` (ở thư mục gốc) | **15/15 PASS** | Chạy lại nhiều lần được (email đăng ký ngẫu nhiên mỗi lần). Kết quả: `selftest/report.html` + `report.pdf` |
+| Staff Portal (S01…S10) | `cd web && npm run selftest` | **10/10 PASS** | Cần `be/.env`: `EMAIL_PROVIDER=MOCK`, `MOCK_EMAIL_FAIL=next` + `db:reset` trước (xem đầu file `web/scripts/selftest.mjs`) |
+| API (47 bước) | `docker compose exec be npm run smoke` | **47/47 PASS** | Tự reset DB, tự bật server riêng cổng 4100 với Mock. Chạy xong nên `db:reset` |
+| Kiểu TypeScript | `npm run typecheck` · `cd web && npm run typecheck` · `cd be && npm run typecheck` | 0 lỗi | |
 
-```bash
-# Terminal 1
-npm run dev
+Tiêu chí app Customer: AC-01 khách chưa đăng nhập bị chặn · AC-02 Welcome → Login/Register · AC-03 lỗi Login ·
+AC-04 Login → Home · AC-05 Book a Ride → Services · AC-06 Continue tắt khi chưa chọn · AC-07 6 dịch vụ, chọn đúng 1 ·
+AC-08 Continue → Journey đúng dịch vụ · AC-09 Change → Journey cập nhật · AC-10 Home ↔ Profile · AC-11 Log Out ·
+AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Home · AC-15 không có Confirmation/Payment.
 
-# Terminal 2 (lần đầu: tải trình duyệt test, ~200 MB)
-npx playwright install chromium
-npm run selftest
-```
+## 12. Kịch bản demo
 
-Kết quả ở thư mục `selftest/`: ảnh chụp từng bước, `report.html` và `report.pdf`.
+Trước buổi demo: `docker compose up -d` → `docker compose exec be npm run db:reset`. Chọn chế độ email ở [mục 5](#5-gửi-email-mock--emailjs--test-mode)
+(muốn demo lỗi + Retry với Mock thì đặt `MOCK_EMAIL_FAIL=next`).
 
-| ID | Tiêu chí |
-|---|---|
-| AC-01 | Chưa đăng nhập → `/home`, `/services`, `/journey`, `/profile` chuyển về `/login` |
-| AC-02 | Welcome → Log In mở Login; Sign Up mở Registration |
-| AC-03 | Login báo lỗi đúng câu (để trống, sai định dạng, sai mật khẩu) |
-| AC-04 | Đăng nhập thành công → `/home` |
-| AC-05 | Home → Book a Ride → `/services` |
-| AC-06 | Continue bị tắt khi chưa chọn dịch vụ |
-| AC-07 | Cả 6 dịch vụ chọn được, mỗi lần đúng 1, Continue bật sau khi chọn |
-| AC-08 | Continue → Journey Details hiện đúng dịch vụ (tên, icon, mô tả) |
-| AC-09 | Change → chọn dịch vụ khác → Journey cập nhật |
-| AC-10 | Home ↔ My Profile qua thanh tab; Profile hiện tên + email đang đăng nhập |
-| AC-11 | Log Out → `/login`; Home bị chặn lại |
-| AC-12 | Registration báo lỗi đúng (10 ô trống + dữ liệu sai như Figma 2A) |
-| AC-13 | Email đã tồn tại → báo trùng |
-| AC-14 | Đăng ký thành công → Registration Complete → Go to Home → `/home` |
-| AC-15 | Không có route Booking Confirmation / Payment |
+1. App Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → **gõ `localhost:5173/support`** (không có nút trong Profile).
+2. Bấm **Send enquiry** khi để trống → lỗi hiện dưới từng ô.
+3. Chọn **About a trip** → PHC-24051 → nhập tiêu đề + nội dung → gửi → thấy mã **ENQ-000008**.
+4. Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `sarah.collins@privatehire.test / Staff@2026`.
+5. Inbox (lọc Awaiting) → enquiry vừa gửi nằm trên cùng, badge **Trip**, tên Alex.
+6. Lọc General / Trip-specific → danh sách đổi đúng; tìm "child seat" → ra đúng 1 enquiry.
+7. Mở enquiry vừa gửi → thông tin khách + câu hỏi + **Trip details** PHC-24051.
+8. Bấm **Send response** khi Message trống → lỗi validation.
+9. Gửi khi đang ép lỗi (Mock `MOCK_EMAIL_FAIL=next`) → Alert lỗi, lịch sử có **Failed**, nội dung vẫn còn → **Retry** → **Sent**, trạng thái tự **Resolved**.
+10. Đổi tay Resolved → Awaiting → toast "Status updated", Status history ghi lại.
+11. Mở enquiry GENERAL (ví dụ "Do you provide child seats?") → **không** có Trip details.
+12. Log out → về Login; bấm Back không vào lại trang trong.
+13. (Thêm) Quay lại `localhost:5173/support` → "My enquiries" hiện trạng thái mới.
 
-> Mọi thay đổi code phải giữ **typecheck 0 lỗi** và **selftest 15/15 PASS**. Nếu test fail, sửa app — không sửa test.
+Demo 15 tiêu chí của app Customer: làm theo bảng AC-01…AC-15 ở [mục 11](#11-kiểm-thử-tự-động) (hoặc chạy `npm run selftest`
+và mở `selftest/report.html` để có ảnh từng bước).
 
-## 11. Quy trình Git (nhánh main / dev)
+## 13. Quy trình Git
 
 | Nhánh | Dùng cho |
 |---|---|
 | `main` | Bản ổn định, dùng để demo / nộp bài |
 | `dev` | Nhánh làm việc hằng ngày |
+| `feature/staff-portal` | Staff Portal + Backend + Docker → gộp vào `dev` qua Pull Request |
 
-```bash
-git switch dev
-git pull
-# ... sửa code ...
-npm run typecheck
-npm run selftest          # cần npm run dev đang chạy
-git add -A
-git commit -m "mô tả ngắn thay đổi"
-git push
-```
+Trước khi gộp: typecheck 0 lỗi, selftest app Customer 15/15, selftest Staff Portal 10/10, smoke API 47/47.
+Không commit `be/.env` (chứa mật khẩu MySQL và key EmailJS — đã có trong `.gitignore`).
 
-Khi `dev` đã ổn (15/15 PASS) thì tạo Pull Request `dev → main` trên GitHub để gộp vào bản ổn định.
+## 14. Giới hạn hiện tại
 
-## 12. Giới hạn hiện tại và hướng phát triển
+- Không có Booking Confirmation, Payment; không quản lý tài xế, doanh thu, điều phối xe (ngoài phạm vi).
+- Booking chỉ là **dữ liệu mẫu** trong MySQL — luồng đặt xe trong app Customer vẫn chỉ giữ dịch vụ đang chọn, chưa tạo booking.
+- `/support` không có nút dẫn tới từ màn cũ (yêu cầu không đổi UI) — phải gõ đường dẫn.
+- Staff Portal: chỉ 2 tài khoản seed, không có trang quản lý tài khoản / phân quyền; khách chưa trả lời lại được qua email (1 chiều).
+- Tab Activity / Alerts, các mục Profile (Personal Information, Saved Addresses, Payment Details), Forgot Password,
+  Continue to Vehicle Selection chưa có màn đích.
+- Backend chạy bằng `tsx` (không xuất file JS); `npm run build` của `be/` chỉ kiểm tra kiểu.
+- Hệ thống dành cho demo trên localhost — chưa cấu hình HTTPS / deploy.
 
-**Ngoài phạm vi / chưa làm**
-- Không có Booking Confirmation, Payment (đúng yêu cầu đề).
-- Tab **Activity**, **Alerts** và các mục Profile (Personal Information, Saved Addresses, Payment Details) chưa có màn đích.
-- **Forgot Password?** và **Continue to Vehicle Selection** chưa có hành động.
-- 17 màn Figma chưa xuất được code (giới hạn lượt Figma); Registration, Registration Complete, Service Selection,
-  Profile được dựng tay theo ảnh thiết kế.
-- Header "‹ Book a Ride" của Service Selection là giả định (ảnh thiết kế chỉ có phần nội dung).
-- Nút chính của Registration Complete là "Go to Home" (Figma ghi "Go to Login") để đáp ứng yêu cầu
-  "đăng ký thành công → Home" (người dùng được đăng nhập luôn).
-
-**Hướng phát triển: nối backend thật**
-1. Backend Node + Express + TypeScript + SQLite (repo riêng), API dự kiến:
-   `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`,
-   `GET /api/auth/email-exists`, `GET /api/services`.
-2. Thêm proxy `/api` → `http://localhost:4000` trong `vite.config.ts`.
-3. Đổi thân hàm trong `src/services/auth.ts` sang `fetch("/api/...")`, giữ nguyên tên hàm và kiểu trả về.
-4. Chạy lại selftest 15/15 PASS rồi mới bỏ phần lưu `localStorage`.
-
-## 13. Xử lý sự cố thường gặp
+## 15. Xử lý sự cố
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Ảnh/icon không hiện | Kiểm tra `public/figma-assets/` có file; nếu thêm màn mới thì chạy `npm run figma-assets` |
-| Đăng nhập báo "Too many attempts…" | Chờ 15 phút hoặc xoá key `phc_login_attempts` trong Local Storage |
-| Đã đăng nhập mà muốn xem màn Welcome / Login | Vào Profile → Log Out, hoặc xoá key `phc_session` |
-| Muốn làm lại từ đầu | Xoá toàn bộ key `phc_*` trong Local Storage + Session Storage → F5 |
-| `npm run selftest` lỗi kết nối | Phải chạy `npm run dev` ở terminal khác trước (mặc định `http://localhost:5173`, đổi bằng biến `BASE_URL`) |
-| Selftest báo thiếu trình duyệt | Chạy `npx playwright install chromium` |
-| Giao diện nền tối khác thiết kế | Trình duyệt (Edge/Chrome) đang ép chế độ tối cho trang web — tắt *Force dark mode* hoặc tiện ích dark mode |
+| `docker` báo `cannot find dockerDesktopLinuxEngine` | Docker Desktop chưa chạy engine: mở Docker Desktop, hoặc chạy `docker desktop start` |
+| Container "Up" nhưng trình duyệt không vào được 5173/5174/4000 | Docker Desktop vừa khởi động lại làm hỏng chuyển tiếp cổng: `docker compose up -d --force-recreate` |
+| Staff Portal báo "Can't reach the server" | Backend chưa chạy: `docker compose ps`, `docker compose logs be` |
+| Backend không khởi động sau khi sửa `be/.env` | `docker compose logs be` — server in rõ thiếu / sai biến nào (không in giá trị key) |
+| Email không tới | Xem lỗi trong mục Failed của Response history; kiểm tra lại [`docs/EMAILJS_SETUP.md`](docs/EMAILJS_SETUP.md) (non-browser API, Service ID, Template ID); kiểm tra thư mục Spam |
+| Đăng nhập báo "Too many attempts…" | Chờ 15 phút hoặc `docker compose exec be npm run db:reset` |
+| Muốn dữ liệu sạch như ban đầu | `docker compose exec be npm run db:reset` |
+| Selftest báo thiếu trình duyệt | `npx playwright install chromium` (trong thư mục tương ứng) |
+| Ảnh/icon app Customer không hiện | Kiểm tra `public/figma-assets/`; thêm màn Figma mới thì chạy `npm run figma-assets` |
+| Giao diện nền tối khác thiết kế | Trình duyệt đang ép chế độ tối — tắt *Force dark mode* hoặc tiện ích dark mode |

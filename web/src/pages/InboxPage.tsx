@@ -46,8 +46,12 @@ export default function InboxPage() {
     [query.type, query.status, query.q, query.sort, query.page],
   );
 
+  // Builds the next URL from the browser's CURRENT address, not from the params of the render that created this
+  // function: the debounced search can fire right after a filter click, and must not bring back the old filter.
+  // (react-router's functional setSearchParams also hands back the params of that older render.)
   function update(changes: Partial<InboxQuery>, resetPage = true) {
-    const next = { ...query, ...changes, ...(resetPage ? { page: changes.page ?? 1 } : {}) };
+    const current = readQuery(new URLSearchParams(window.location.search));
+    const next = { ...current, ...changes, ...(resetPage ? { page: changes.page ?? 1 } : {}) };
     const p = new URLSearchParams();
     if (next.type !== "ALL") p.set("type", next.type);
     p.set("status", next.status);
