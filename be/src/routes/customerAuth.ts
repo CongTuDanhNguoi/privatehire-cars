@@ -16,8 +16,9 @@ import { EmailQuery, LoginBody, RegisterBody, parseInput } from "../validation/a
 export const customerAuthRouter = Router();
 
 customerAuthRouter.post("/register", async (req, res) => {
-  const user = await registerCustomer(parseInput(RegisterBody, req.body));
-  res.status(201).json({ user });
+  const { id, user } = await registerCustomer(parseInput(RegisterBody, req.body));
+  const loggedInAt = startSession(res, "customer", id); // signed in straight away (P0-13)
+  res.status(201).json({ user: { ...user, loggedInAt: loggedInAt.toISOString() } });
 });
 
 customerAuthRouter.post("/login", loginRateLimit("CUSTOMER", LOGIN_MESSAGES.locked), async (req, res) => {

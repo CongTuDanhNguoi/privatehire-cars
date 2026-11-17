@@ -19,7 +19,7 @@ import {
   type RegistrationForm,
 } from "../validation/registerValidation";
 import { formatCardNumber, formatExpiry } from "../validation/format";
-import { isEmailRegistered, registerUser } from "../services/auth";
+import { registerUser } from "../services/auth";
 
 const FONT = "font-['Inter',sans-serif]";
 
@@ -112,7 +112,8 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const inputs = useRef<Partial<Record<RegistrationField, HTMLInputElement | null>>>({});
 
-  const opts = { isEmailTaken: isEmailRegistered };
+  // Email trùng do server kiểm tra khi bấm Create Account (409 → câu báo lỗi dưới ô email).
+  const opts = {};
 
   function change(name: RegistrationField) {
     return (e: ChangeEvent<HTMLInputElement>) => {

@@ -27,8 +27,9 @@ export async function isCustomerEmailRegistered(rawEmail: string): Promise<boole
   return rows.length > 0;
 }
 
-// Plan §7.2 / decision P0-2: registering does NOT sign the customer in.
-export async function registerCustomer(form: RegisterBody): Promise<CustomerUser> {
+// Decision P0-13 (replaces P0-2): registering signs the customer in, like the original app
+// (Registration Complete → "Go to Home"). The route starts the session with the returned id.
+export async function registerCustomer(form: RegisterBody): Promise<{ id: number; user: CustomerUser }> {
   const errors = validateRegistration(form);
   if (Object.keys(errors).length > 0) throw validationError(errors);
 
@@ -36,8 +37,9 @@ export async function registerCustomer(form: RegisterBody): Promise<CustomerUser
   if (await isCustomerEmailRegistered(form.email)) throw duplicate();
 
   const user = { fullName: form.fullName.trim(), email: normalizeEmail(form.email) };
+  let id: number;
   try {
-    await pool.execute<ResultSetHeader>(
+    const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
@@ -50,12 +52,13 @@ export async function registerCustomer(form: RegisterBody): Promise<CustomerUser
         await hashPassword(form.password),
       ],
     );
+    id = result.insertId;
   } catch (err) {
     // Two requests racing for the same email: the UNIQUE index decides.
     if (err && typeof err === "object" && "code" in err && err.code === "ER_DUP_ENTRY") throw duplicate();
     throw err;
   }
-  return user;
+  return { id, user };
 }
 
 // Returns the customer id on success. Throws 400 / 401 / 423.

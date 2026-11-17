@@ -3,18 +3,19 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { BookingProvider } from "./context/BookingContext";
-import { seedDemoAccount } from "./services/auth";
+import { initSession } from "./services/auth";
 import "./index.css";
 
-// Tạo sẵn tài khoản demo: alex.morgan@example.com / Password123
-void seedDemoAccount();
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <BookingProvider>
-        <App />
-      </BookingProvider>
-    </BrowserRouter>
-  </StrictMode>
-);
+// Hỏi server ai đang đăng nhập (cookie) trước khi vẽ app, để RequireAuth / GuestOnly chạy đúng.
+// Tài khoản demo alex.morgan@example.com / Password123 có sẵn trong database (be/scripts/seed.ts).
+void initSession().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <BrowserRouter>
+        <BookingProvider>
+          <App />
+        </BookingProvider>
+      </BrowserRouter>
+    </StrictMode>
+  );
+});

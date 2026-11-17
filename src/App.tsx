@@ -8,6 +8,7 @@
 //   /services            Service Selection  (BẮT BUỘC đăng nhập)
 //   /journey             Journey Details    (BẮT BUỘC đăng nhập)
 //   /profile             My Profile         (BẮT BUỘC đăng nhập)
+//   /support             Contact Support    (BẮT BUỘC đăng nhập; không có link ở màn cũ, gõ đường dẫn)
 //   /gallery             Xem các màn Figma tĩnh (không thuộc luồng chính)
 // =============================================================
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -20,6 +21,7 @@ import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
 import ProfilePage from "./pages/ProfilePage";
+import SupportPage from "./pages/SupportPage";
 import { GalleryIndex, GalleryScreen } from "./pages/GalleryPage";
 
 export default function App() {
@@ -34,6 +36,7 @@ export default function App() {
       <Route path="/services" element={<RequireAuth><ServiceSelectionPage /></RequireAuth>} />
       <Route path="/journey" element={<RequireAuth><JourneyDetailsPage /></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+      <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
 
       <Route path="/gallery" element={<GalleryIndex />} />
       <Route path="/gallery/:slug" element={<GalleryScreen />} />

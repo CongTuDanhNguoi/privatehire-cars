@@ -10,7 +10,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateEmail } from "../validation/rules";
 import { validateLogin, LOGIN_MESSAGES, type LoginErrors } from "../validation/loginValidation";
-import { loginUser } from "../services/auth";
+import { loginUser, SERVER_UNAVAILABLE_MESSAGE } from "../services/auth";
 
 // Ảnh/icon của Screen 1 (6:820)
 const assetPathPrefix = "/figma-assets/30cbb8c3-9c14-41b3-8054-34d441a5bd1d";
@@ -97,6 +97,7 @@ export default function LoginPage() {
     setSubmitting(false);
     if (result.ok) navigate("/home", { replace: true });
     else if (result.reason === "locked") setBanner(LOGIN_MESSAGES.locked(result.minutesLeft));
+    else if (result.reason === "unavailable") setBanner(SERVER_UNAVAILABLE_MESSAGE);
     else setBanner(LOGIN_MESSAGES.invalidCredentials);
   }
 

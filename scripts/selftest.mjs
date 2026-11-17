@@ -226,12 +226,16 @@ await test("AC-13", "Register: email đã tồn tại", "Đăng ký bằng alex.
   await s("register-duplicate-email");
 });
 
+// Email mới mỗi lần chạy: tài khoản nay lưu trong MySQL (không mất khi xoá localStorage), nên email cố định
+// sẽ bị báo trùng từ lần chạy thứ hai.
+const NEW_EMAIL = `new.user+${Date.now()}@example.com`;
+
 await test("AC-14", "Register thành công → Registration Complete → Home", "Dùng email mới → Create Account → Go to Home", async (s) => {
-  await page.fill("#email", "new.user@example.com");
+  await page.fill("#email", NEW_EMAIL);
   await page.click("button[type=submit]");
-  await wait(500);
+  await wait(800);
   expect(pathname() === "/register/complete", `Đang ở ${pathname()}`);
-  expect((await page.textContent('[data-testid="registered-email"]')) === "new.user@example.com", "Sai email trên màn Complete");
+  expect((await page.textContent('[data-testid="registered-email"]')) === NEW_EMAIL, "Sai email trên màn Complete");
   await s("registration-complete");
   await page.click("text=Go to Home");
   await wait();
@@ -239,8 +243,8 @@ await test("AC-14", "Register thành công → Registration Complete → Home", 
   await s("register-to-home");
   await page.goto(BASE + "/profile");
   await wait();
-  expect((await page.textContent('[data-testid="profile-email"]')) === "new.user@example.com", "Profile không hiện tài khoản mới");
-  return "Tài khoản mới đăng nhập luôn, Profile hiện new.user@example.com";
+  expect((await page.textContent('[data-testid="profile-email"]')) === NEW_EMAIL, "Profile không hiện tài khoản mới");
+  return `Tài khoản mới đăng nhập luôn, Profile hiện ${NEW_EMAIL}`;
 });
 
 await test("AC-15", "Không có màn Booking Confirmation / Payment", "Kiểm tra danh sách route", async () => {
