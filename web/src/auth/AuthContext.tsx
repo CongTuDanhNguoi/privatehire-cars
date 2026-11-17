@@ -2,14 +2,16 @@
 // Any protected API call that returns 401 clears the session and sends the user to /login with a notice.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { setUnauthorizedHandler } from "../api/client";
+import { ApiError, setUnauthorizedHandler } from "../api/client";
 import { staffAuthApi } from "../api/staff";
 import type { Staff } from "../types";
 
 export const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
 
 interface AuthState {
-  status: "loading" | "signedIn" | "signedOut";
+  // "unavailable" = the API could not be reached while checking the session (not the same as signed out).
+  status: "loading" | "signedIn" | "signedOut" | "unavailable";
+  retrySession: () => void;
   staff: Staff | null;
   notice: string | null; // shown once on the login page
   signIn: (email: string, password: string) => Promise<Staff>;
@@ -30,9 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthState["status"]>("loading");
   const [staff, setStaff] = useState<Staff | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setStatus("loading");
     staffAuthApi
       .me()
       .then(({ staff }) => {
@@ -40,15 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStaff(staff);
         setStatus("signedIn");
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return;
         setStaff(null);
-        setStatus("signedOut");
+        setStatus(err instanceof ApiError && err.status === 401 ? "signedOut" : "unavailable");
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
+
+  const retrySession = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -80,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearNotice = useCallback(() => setNotice(null), []);
 
   const value = useMemo(
-    () => ({ status, staff, notice, signIn, signOut, clearNotice }),
-    [status, staff, notice, signIn, signOut, clearNotice],
+    () => ({ status, retrySession, staff, notice, signIn, signOut, clearNotice }),
+    [status, retrySession, staff, notice, signIn, signOut, clearNotice],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

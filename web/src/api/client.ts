@@ -47,6 +47,9 @@ export async function api<T>(path: string, { method = "GET", body, signal, skipA
   if (res.status === 204) return undefined as T;
   const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (res.ok) return data as T;
+  // Our API always answers errors with a JSON body. A 5xx without one comes from the dev proxy or a gateway
+  // that could not reach the API — treat it like a lost connection.
+  if (res.status >= 500 && !data?.error) throw new ApiError(0, "NETWORK", NETWORK_ERROR_MESSAGE);
 
   const error = (data?.error ?? {}) as { code?: string; message?: string; fields?: Record<string, string> };
   if (res.status === 401 && !skipAuthRedirect) onUnauthorized?.();
