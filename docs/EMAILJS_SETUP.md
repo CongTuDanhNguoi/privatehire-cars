@@ -26,16 +26,17 @@ Dashboard → **Email Templates** → **Create New Template**, điền như sau:
 | **From Name** | `PrivateHire Cars Support` |
 | **Reply To** | `{{reply_to}}` |
 
-Content:
+Content (bấm **Edit Content**, mỗi dòng dưới đây là một dòng riêng — Enter để xuống dòng):
 ```
-Hi {{to_name}},
-
 {{message}}
 
 —
 Reference: {{enquiry_code}}
 PrivateHire Cars Customer Support
 ```
+
+Không thêm dòng chào `Hi {{to_name}},` vào template: nhân viên đã tự viết lời chào trong nội dung phản hồi
+(ô soạn gợi ý sẵn "Hi Alex,"), thêm vào template sẽ thành "Hi Alex Morgan, Hi Alex,".
 
 Bấm **Save**. Ghi lại **Template ID** (dạng `template_xxxxxxx`).
 
