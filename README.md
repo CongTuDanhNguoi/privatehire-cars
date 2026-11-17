@@ -9,6 +9,19 @@ Figma high-fidelity sang React chạy thật trên trình duyệt.
   `localStorage` của trình duyệt. Backend thật (Node + Express + SQLite) đang được thiết kế ở repo riêng.
 - Tự kiểm thử tự động: **15/15 tiêu chí nghiệm thu PASS** (`npm run selftest`).
 
+> ### 🐳 Đang phát triển trên nhánh `feature/staff-portal`: Staff Portal + Backend + Docker
+> Repo đang được mở rộng thành 3 phần: app Customer (thư mục gốc), **Staff Portal** (`web/`) và **backend dùng chung**
+> (`be/`, Express + MySQL). Chạy cả hệ thống bằng Docker Desktop:
+>
+> ```bash
+> docker compose up -d
+> ```
+>
+> App Customer <http://localhost:5173> · Staff Portal <http://localhost:5174> (`sarah.collins@privatehire.test` / `Staff@2026`)
+> · API <http://localhost:4000/api/health> · MySQL `localhost:3307` (root / `privatehire`).
+> Xem `docker-compose.yml`, [`be/README.md`](be/README.md) và [`docs/STAFF_PORTAL_PLAN.md`](docs/STAFF_PORTAL_PLAN.md).
+> README đầy đủ sẽ được cập nhật ở Phase 8.
+
 ---
 
 ## Mục lục

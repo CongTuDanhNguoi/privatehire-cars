@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+/* PrivateHire Cars UI Kit tokens (plan §8.1). Components use these tokens only — no raw hex values. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #02284f;              /* Text: headings / body text */
+  --color-surface: #ffffff;          /* Background: screen / tag backgrounds */
+  --color-line: #8999a6;             /* Border: input / card borders */
+  --color-error: #fa0702;            /* Error & compulsory entry: text + stroke */
+  --color-error-fill: rgb(250 7 2 / 0.05);
+  --color-success: #05c1fa;          /* Success text (like selected) / success stroke */
+  --color-success-fill: #def7ff;     /* Success button / success background */
+  --color-primary: #65b3fc;          /* Primary button fill */
+  --color-primary-stroke: rgb(2 40 79 / 0.51);
+  --color-primary-pressed: #3f84c4;  /* Pressed */
+  --color-muted: #d5e2ed;            /* Shadowing, disabled, subtle backgrounds */
+
+  /* Typography (plan §8.2, D11): 28 page title · 20 heading · 16 body · 14 label · 12 helper */
+  --text-page: 1.75rem;
+  --text-page--line-height: 2.25rem;
+  --text-heading: 1.25rem;
+  --text-heading--line-height: 1.75rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.25rem;
+  --text-helper: 0.75rem;
+  --text-helper--line-height: 1rem;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    margin: 0;
+    min-width: 1280px; /* desktop-only portal (plan §8.4) */
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* One clear focus ring for every interactive element (keyboard users). */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-pressed);
+    outline-offset: 2px;
+  }
+}
+
+/* Hides content visually but keeps it in the accessibility tree. */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* ---------- Spinner: native indeterminate <progress> drawn as a ring ---------- */
+@property --arc-start {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --arc-end {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --progress-dash-animation {
+  syntax: "*";
+  inherits: false;
+  initial-value: , progress-dash 3s ease-in-out infinite;
+}
+progress.loading-spinner:indeterminate::-webkit-progress-bar,
+progress.loading-spinner:indeterminate::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+progress.loading-spinner:indeterminate::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+progress.loading-spinner:indeterminate {
+  --_from: calc(90deg + var(--arc-start, 0deg));
+  --_to: calc(90deg + var(--arc-end, 158deg));
+  --size: 40px;
+  --thickness: 3px;
+  --spinner-color: var(--color-primary-pressed);
+  --track-color: var(--color-muted);
+  --_used-spinner-duration: 1.5s;
+
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border: 0;
+  border-radius: 50%;
+  appearance: none;
+  background: conic-gradient(from var(--_from), var(--spinner-color) calc(var(--_to) - var(--_from)), transparent 0)
+    var(--track-color);
+  animation:
+    progress-spin var(--_used-spinner-duration) linear infinite
+    var(--progress-dash-animation, );
+
+  @supports (background-clip: border-area) {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+  @supports not (background-clip: border-area) {
+    --clip-boundary: calc(100% - var(--thickness));
+    mask-image: radial-gradient(farthest-side, transparent var(--clip-boundary), black var(--clip-boundary));
+  }
+  @media (forced-colors: active) {
+    forced-color-adjust: none;
+    --spinner-color: CanvasText;
+    --track-color: Canvas;
+  }
+}
+progress.loading-spinner.spinner-sm:indeterminate {
+  --size: 18px;
+  --thickness: 2px;
+  --spinner-color: var(--color-surface);
+  --track-color: var(--color-primary-stroke);
+}
+@media (prefers-reduced-motion: reduce) {
+  progress.loading-spinner:indeterminate {
+    --_used-spinner-duration: 6s;
+    --progress-dash-animation: ;
+    --arc-end: 158deg;
+  }
+}
+@keyframes progress-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+@keyframes progress-dash {
+  from {
+    --arc-start: 0deg;
+    --arc-end: 3deg;
+  }
+  50% {
+    --arc-start: 100deg;
+    --arc-end: 358deg;
+  }
+  to {
+    --arc-start: 360deg;
+    --arc-end: 363deg;
+  }
+}
+
+/* ---------- Modal dialog: stop the page scrolling behind it ---------- */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+}
+
+/* ---------- Toasts (popover="manual"); fixed position also works where popover is unsupported ---------- */
+.toast {
+  position: fixed;
+  inset: auto 24px 24px auto;
+  margin: 0;
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease;
+  transition-behavior: allow-discrete;
+}
+@starting-style {
+  .toast:popover-open {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: none;
+  }
+}

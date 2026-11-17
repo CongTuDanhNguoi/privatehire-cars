@@ -2,7 +2,6 @@
 // zod only checks the *shape* (every field is a string). Field rules and their exact messages are reused
 // from the customer app's src/validation so the browser and the server always show the same text.
 import { z } from "zod";
-import { validateEmail } from "../../../src/validation/rules";
 import { validationError } from "../errors.js";
 
 const text = z.string().default("");
@@ -38,20 +37,5 @@ export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.in
   throw validationError(fields, "Request is missing required fields or has invalid values.");
 }
 
-// ---------- Staff login (messages from the Staff Portal plan §9) ----------
-export const STAFF_LOGIN_MESSAGES = {
-  emailRequired: "Email address is required.",
-  emailInvalid: "Enter a valid email address.",
-  passwordRequired: "Password is required.",
-  invalidCredentials: "Incorrect email or password.",
-  locked: (minutes: number) => `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
-};
-
-export function validateStaffLogin({ email, password }: LoginBody): Record<string, string> {
-  const errors: Record<string, string> = {};
-  // Same email rule (regex, no spaces, no "..", max 254) as the customer app, staff wording.
-  if (!email.trim()) errors.email = STAFF_LOGIN_MESSAGES.emailRequired;
-  else if (validateEmail(email)) errors.email = STAFF_LOGIN_MESSAGES.emailInvalid;
-  if (!password) errors.password = STAFF_LOGIN_MESSAGES.passwordRequired;
-  return errors;
-}
+// ---------- Staff login: rules shared with the Staff Portal ----------
+export { STAFF_LOGIN_MESSAGES, validateStaffLogin } from "./staffLogin.js";
