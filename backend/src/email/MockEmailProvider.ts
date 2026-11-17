@@ -20,6 +20,7 @@ export class MockEmailProvider implements EmailProvider {
       console.log(`[MOCK EMAIL] simulated FAILURE to=${msg.to} subject="${msg.subject}"`);
       throw new Error("Mock email service: simulated delivery failure.");
     }
-    console.log(`[MOCK EMAIL] (not really sent) to=${msg.to} subject="${msg.subject}" enquiry=${msg.enquiryCode}`);
+    console.log(`[MOCK EMAIL] (not really sent) to=${msg.to} subject="${msg.subject}" ref=${msg.enquiryCode}
+${msg.body.slice(0, 300)}`);
   }
 }

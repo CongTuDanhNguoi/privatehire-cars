@@ -151,7 +151,13 @@ export default function RegisterPage() {
     setSubmitting(true);
     const result = await registerUser(form);
     setSubmitting(false);
-    if (result.ok) navigate("/register/complete", { replace: true, state: { email: result.user.email } });
+    // P0-18: tài khoản mới phải nhập mã OTP gửi qua email trước khi sang Registration Complete.
+    if (result.ok) {
+      navigate("/verify-email", {
+        replace: true,
+        state: { email: result.user.email, emailSent: result.verification.emailSent },
+      });
+    }
     else setErrors(result.errors);
   }
 

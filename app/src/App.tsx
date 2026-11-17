@@ -3,6 +3,7 @@
 //   /                    Welcome            (chỉ khi CHƯA đăng nhập)
 //   /login               Login              (chỉ khi CHƯA đăng nhập)
 //   /register            Registration       (chỉ khi CHƯA đăng nhập)
+//   /verify-email        Nhập mã OTP xác nhận email (chỉ khi CHƯA đăng nhập)
 //   /register/complete   Registration Complete
 //   /home                Home               (BẮT BUỘC đăng nhập)
 //   /services            Service Selection  (BẮT BUỘC đăng nhập)
@@ -17,6 +18,7 @@ import WelcomePage from "./pages/WelcomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RegistrationCompletePage from "./pages/RegistrationCompletePage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
@@ -32,6 +34,7 @@ export default function App() {
       <Route path="/" element={<GuestOnly><WelcomePage /></GuestOnly>} />
       <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
+      <Route path="/verify-email" element={<GuestOnly><VerifyEmailPage /></GuestOnly>} />
       <Route path="/register/complete" element={<RegistrationCompletePage />} />
 
       <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />

@@ -272,6 +272,53 @@ try {
   const seedFailed = (await staff3("GET", `/staff/enquiries/${r.json.items[0].id}`)).json.responses[0];
   r = await staff3("POST", `/staff/responses/${seedFailed.id}/retry`);
   check("retry seeded FAILED response (ENQ-000001) → SENT", r.status === 200 && r.json.response.sendStatus === "SENT");
+
+  // ===== Email verification (P0-18) =====
+  const form = (email) => ({
+    fullName: "Olivia Test", email, homeAddress: "1 Test Street", phone: "07911 123456",
+    cardholderName: "Olivia Test", cardNumber: "4242 4242 4242 4242", expiry: "12/30", cvv: "123",
+    password: "Password123", confirmPassword: "Password123",
+  });
+  const otpEmail = "otp.user@example.com";
+  const newbie = client();
+  const devCode = async (email) => (await newbie("GET", `/dev/last-verification-code?email=${encodeURIComponent(email)}`)).json?.code;
+  r = await newbie("POST", "/customer/auth/register", form(otpEmail));
+  check(
+    "register → 201 + verification code emailed (no session)",
+    r.status === 201 && r.json.verification?.emailSent === true && r.json.verification.resendInSeconds === 60,
+    JSON.stringify(r.json),
+  );
+  const code1 = await devCode(otpEmail);
+  check("mock code is 6 digits", /^\d{6}$/.test(code1 ?? ""), String(code1));
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Password123" });
+  check("login before verifying → 403 EMAIL_NOT_VERIFIED", r.status === 403 && r.json.error.code === "EMAIL_NOT_VERIFIED", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Wrong1234" });
+  check("unverified + wrong password → 401 (no hint)", r.status === 401 && r.json.error.code === "INVALID_CREDENTIALS");
+  r = await newbie("POST", "/customer/auth/resend-code", { email: otpEmail });
+  check("resend within 60 s → 429 with retryAfterSeconds", r.status === 429 && r.json.error.retryAfterSeconds > 0, JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: "12a" });
+  check("verify bad format → 400", r.status === 400 && r.json.error.fields?.code === "The code must be 6 digits.", JSON.stringify(r.json));
+  const wrong = String((Number(code1) + 1) % 1_000_000).padStart(6, "0");
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: wrong });
+  check("verify wrong code → 400, 4 attempts left", r.status === 400 && r.json.error.fields?.code === "The code is incorrect. 4 attempts left.", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: code1.slice(0, 3) + " " + code1.slice(3) });
+  check("verify right code (with a space) → 200", r.status === 200 && r.json.verified === true && r.json.user.email === otpEmail, JSON.stringify(r.json));
+  check("code removed after use", (await devCode(otpEmail)) === undefined);
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Password123" });
+  check("login after verifying → 200", r.status === 200 && r.json.user.email === otpEmail);
+  r = await newbie("POST", "/customer/auth/resend-code", { email: otpEmail });
+  check("resend for verified email → generic 200", r.status === 200);
+  r = await newbie("POST", "/customer/auth/resend-code", { email: "nobody@example.com" });
+  check("resend for unknown email → same generic 200", r.status === 200 && r.json.verification.sentTo === "nobody@example.com");
+
+  const lockedEmail = "otp.locked@example.com";
+  await newbie("POST", "/customer/auth/register", form(lockedEmail));
+  const code2 = await devCode(lockedEmail);
+  const wrong2 = String((Number(code2) + 1) % 1_000_000).padStart(6, "0");
+  for (let i = 0; i < 5; i++) r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: wrong2 });
+  check("5th wrong code → too many attempts", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: code2 });
+  check("right code after 5 wrong → still blocked", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.");
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);

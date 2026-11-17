@@ -24,6 +24,7 @@ export const RegisterBody = z.object({
 export type RegisterBody = z.infer<typeof RegisterBody>;
 
 export const EmailQuery = z.object({ email: text });
+export const VerifyEmailBody = z.object({ email: text, code: text });
 
 // Parses a body/query against a schema; a wrong type (e.g. a number instead of a string) becomes a 400.
 export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {

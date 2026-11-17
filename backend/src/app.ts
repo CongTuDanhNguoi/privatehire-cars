@@ -9,6 +9,7 @@ import { customerEnquiriesRouter } from "./routes/customerEnquiries.js";
 import { staffAuthRouter } from "./routes/staffAuth.js";
 import { staffEnquiriesRouter } from "./routes/staffEnquiries.js";
 import { staffResponsesRouter } from "./routes/staffResponses.js";
+import { devRouter } from "./routes/dev.js";
 
 export function createApp() {
   const app = express();
@@ -33,6 +34,11 @@ export function createApp() {
   app.use("/api/staff/auth", staffAuthRouter);
   app.use("/api/staff/enquiries", staffEnquiriesRouter);
   app.use("/api/staff", staffResponsesRouter); // /responses/:id/retry, /email-settings
+  // Test helper: read a verification code that was not really emailed (MOCK provider / reserved test address).
+  // Never mounted in production.
+  if (process.env.NODE_ENV !== "production") {
+    app.use("/api/dev", devRouter);
+  }
 
   app.use("/api", notFoundHandler);
   app.use(errorHandler);

@@ -38,14 +38,17 @@ export interface OutgoingEmail {
   subject: string;
   body: string;
   enquiryCode: string;
+  // Verification codes must reach the address being verified, so they ignore test mode (decision P0-18).
+  bypassTestMode?: boolean;
 }
 
 // Sends one email (with a hard timeout). Resolves with an error message on failure instead of throwing.
 export async function sendEmail(email: OutgoingEmail): Promise<{ ok: true } | { ok: false; error: string }> {
+  const redirect = emailSettings.testMode && !email.bypassTestMode;
   const msg: EmailMessage = {
-    to: deliveryAddressFor(email.customerEmail),
+    to: redirect ? deliveryAddressFor(email.customerEmail) : email.customerEmail,
     toName: email.customerName,
-    subject: emailSettings.testMode ? `[TEST → ${email.customerEmail}] ${email.subject}` : email.subject,
+    subject: redirect ? `[TEST → ${email.customerEmail}] ${email.subject}` : email.subject,
     body: email.body,
     enquiryCode: email.enquiryCode,
     replyTo: config.email.replyTo,

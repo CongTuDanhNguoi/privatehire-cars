@@ -164,7 +164,7 @@ EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận �
 
 ```
 Welcome ──Log In──► Login ──đúng──────────────────────────────────► Home
-   └────Sign Up───► Registration ──hợp lệ──► Registration Complete ──Go to Login──► Login (email điền sẵn) ──► Home
+   └────Sign Up───► Registration ──hợp lệ──► Verify Email (mã OTP 6 số qua email) ──đúng mã──► Registration Complete ──Go to Login──► Login (email điền sẵn) ──► Home
 
 Home ──Book a Ride / View All Services──► Service Selection ──Continue──► Journey Details
                                               ▲                               │
@@ -178,6 +178,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 | `/` | Welcome | Chỉ khi **chưa** đăng nhập (đã đăng nhập → tự sang `/home`) |
 | `/login` | Login | Chỉ khi chưa đăng nhập |
 | `/register` | Registration | Chỉ khi chưa đăng nhập |
+| `/verify-email` | Nhập mã OTP xác nhận email | Chỉ khi chưa đăng nhập; ngay sau khi đăng ký, hoặc khi đăng nhập bằng tài khoản chưa xác nhận |
 | `/register/complete` | Registration Complete | Ngay sau khi đăng ký (chưa đăng nhập — bấm "Go to Login") |
 | `/home` | Home | **Bắt buộc đăng nhập** |
 | `/services` | Service Selection | **Bắt buộc đăng nhập** |
@@ -192,6 +193,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 - Đăng nhập / đăng ký lưu trong **MySQL** qua API (`app/src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
   Phiên là cookie httpOnly; `getCurrentUser()` đọc bộ nhớ đệm được nạp bằng `initSession()` khi mở app.
 - Đăng ký xong **không tự đăng nhập** (SCRUM-12 / DEF-05): Registration Complete → **Go to Login** → email được điền sẵn → nhập mật khẩu → Home.
+- **Xác nhận email bằng OTP (P0-18):** sau Create Account, mã 6 số được gửi thật (EmailJS) tới email vừa đăng ký — kể cả khi bật Test mode. Mã hết hạn sau 10 phút, sai 5 lần phải bấm **Resend code** (cho bấm lại sau 60 giây). Chưa nhập mã thì đăng nhập (đúng mật khẩu) sẽ được chuyển sang màn nhập mã. Email `@example.com` (dùng trong self-test) không gửi thật — mã đọc qua `/api/dev/last-verification-code` (chỉ khi không phải production).
 - Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
 - Sai mật khẩu 5 lần liên tiếp → khoá 15 phút (lưu ở server).
 - Phần chuyển sang MySQL không đổi giao diện màn nào; thay đổi giao diện của sprint-1 (Registration Complete, Login điền sẵn email, Journey Details, Vehicle Size, Availability) là của nhóm. `/support` là màn mới.

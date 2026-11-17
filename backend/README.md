@@ -93,8 +93,11 @@ Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyê
 | Method & path | Cần đăng nhập | Body / query | Trả về |
 |---|---|---|---|
 | `GET /api/health` | — | — | 200 `{ status: "ok", database: "up" }` · 503 khi mất DB |
-| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName } }` — **không** tự đăng nhập (SCRUM-12, P0-17) · 400 kèm `fields` · 409 email trùng |
-| `POST /api/customer/auth/login` | — | `{ email, password }` | 200 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` · 400 · 401 · 423 |
+| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName }, verification: { sentTo, emailSent, expiresInMinutes, resendInSeconds } }` — **không** tự đăng nhập (SCRUM-12, P0-17); gửi mã OTP 6 số tới email (P0-18) · 400 kèm `fields` · 409 email trùng |
+| `POST /api/customer/auth/verify-email` | — | `{ email, code }` | 200 `{ user, verified: true }` · 400 `fields.code` (sai định dạng / sai mã "N attempts left" / hết hạn / quá 5 lần) |
+| `POST /api/customer/auth/resend-code` | — | `{ email }` | 200 `{ verification }` (email lạ / đã xác nhận cũng trả 200 giống hệt) · 429 `retryAfterSeconds` khi chưa đủ 60 giây |
+| `GET /api/dev/last-verification-code?email=` | — | — | **Chỉ khi NODE_ENV ≠ production**, chỉ với mã không gửi thật (MOCK hoặc email `@example.com`…): 200 `{ code }` · 404 |
+| `POST /api/customer/auth/login` | — | `{ email, password }` | 200 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` · 400 · 401 · 403 `EMAIL_NOT_VERIFIED` (đúng mật khẩu nhưng chưa nhập mã OTP; kèm `email`) · 423 |
 | `POST /api/customer/auth/logout` | — | — | 204, xoá cookie |
 | `GET /api/customer/auth/me` | customer | — | 200 `{ user }` · 401 |
 | `GET /api/customer/auth/email-exists?email=` | — | — | 200 `{ exists }` |

@@ -118,7 +118,8 @@ export async function seedDatabase(conn: Connection): Promise<void> {
     const hash = await bcrypt.hash(c.password, BCRYPT_COST);
     const email = c.email.trim().toLowerCase();
     const [r] = await conn.execute<ResultSetHeader>(
-      "INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+      // Demo customers count as already verified.
+      "INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())",
       [c.fullName, email, c.phone, c.homeAddress, c.cardLast4, hash],
     );
     customerIds.set(c.key, { id: r.insertId, email });

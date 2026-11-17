@@ -27,6 +27,27 @@ const conn = await connectWithRetry().catch((err: unknown) => {
   process.exit(1);
 });
 
+// P0-18 upgrade for databases created before email verification existed: adds the column + table.
+// Accounts that already exist are marked verified, so nobody who could log in before is locked out.
+async function upgradeEmailVerification() {
+  const [cols] = await conn.query<RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'customers' AND column_name = 'email_verified_at'",
+    [name],
+  );
+  if (cols.length > 0) return;
+  await conn.query("ALTER TABLE customers ADD COLUMN email_verified_at DATETIME NULL");
+  await conn.query("UPDATE customers SET email_verified_at = UTC_TIMESTAMP()");
+  await conn.query(`CREATE TABLE IF NOT EXISTS email_verifications (
+      customer_id  INT UNSIGNED PRIMARY KEY,
+      code_hash    CHAR(64) NOT NULL,
+      expires_at   DATETIME NOT NULL,
+      attempts     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+      last_sent_at DATETIME NOT NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+  console.log("Upgraded: email verification (existing customers marked as verified).");
+}
+
 try {
   await conn.query(`CREATE DATABASE IF NOT EXISTS \`${name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
   await conn.changeUser({ database: name });
@@ -36,6 +57,7 @@ try {
   );
   if (Number(rows[0].n) > 0) {
     console.log(`Database "${name}" already has ${rows[0].n} tables — keeping existing data.`);
+    await upgradeEmailVerification();
   } else {
     const schema = await readFile(path.join(BE_ROOT, "sql", "001_schema.sql"), "utf8");
     await conn.query(schema);

@@ -6,7 +6,7 @@ import type { RowDataPacket } from "mysql2/promise";
 import { BE_ROOT, connect, dbName } from "./connect.js";
 import { seedDatabase } from "./seed.js";
 
-const TABLES = ["staff", "customers", "bookings", "enquiries", "enquiry_responses", "enquiry_status_history", "login_attempts"];
+const TABLES = ["staff", "customers", "bookings", "enquiries", "enquiry_responses", "enquiry_status_history", "login_attempts", "email_verifications"];
 
 const name = dbName();
 const conn = await connect().catch((err: unknown) => {

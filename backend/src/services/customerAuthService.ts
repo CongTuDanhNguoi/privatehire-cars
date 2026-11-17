@@ -4,6 +4,7 @@ import { pool } from "../db.js";
 import { AppError, validationError } from "../errors.js";
 import { DUPLICATE_EMAIL_MESSAGE, validateRegistration } from "../../../app/src/validation/registerValidation";
 import { LOGIN_MESSAGES, validateLogin } from "../../../app/src/validation/loginValidation";
+import { OTP_MESSAGES } from "../../../app/src/validation/otpValidation";
 import type { LoginBody, RegisterBody } from "../validation/auth.js";
 import { clearAttempts, normalizeEmail, recordFailedAttempt } from "./loginAttempts.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
@@ -18,6 +19,7 @@ interface CustomerRow extends RowDataPacket {
   full_name: string;
   email: string;
   password_hash: string;
+  email_verified_at: Date | null;
 }
 
 export async function isCustomerEmailRegistered(rawEmail: string): Promise<boolean> {
@@ -68,7 +70,7 @@ export async function authenticateCustomer(body: LoginBody): Promise<{ id: numbe
 
   const email = normalizeEmail(body.email);
   const [rows] = await pool.execute<CustomerRow[]>(
-    "SELECT id, full_name, email, password_hash FROM customers WHERE email = ?",
+    "SELECT id, full_name, email, password_hash, email_verified_at FROM customers WHERE email = ?",
     [email],
   );
   const row = rows[0];
@@ -81,6 +83,11 @@ export async function authenticateCustomer(body: LoginBody): Promise<{ id: numbe
     throw new AppError("INVALID_CREDENTIALS", LOGIN_MESSAGES.invalidCredentials);
   }
   await clearAttempts("CUSTOMER", email);
+  // Right password but the email was never confirmed (P0-18): no session until the code is entered.
+  // Only said after a correct password, so it does not reveal which emails exist.
+  if (!row.email_verified_at) {
+    throw new AppError("EMAIL_NOT_VERIFIED", OTP_MESSAGES.verifyFirst, { email: row.email });
+  }
   return { id: row.id, user: { email: row.email, fullName: row.full_name } };
 }
 
