@@ -113,7 +113,16 @@ export default function InboxPage() {
           options={[
             { value: "ALL", label: `All${count(counts && counts.general + counts.trip)}` },
             { value: "GENERAL", label: `General${count(counts?.general)}` },
-            { value: "TRIP", label: `Trip-specific${count(counts?.trip)}` },
+            {
+              value: "TRIP",
+              label: (
+                <>
+                  <span className="sm:hidden">Trip</span>
+                  <span className="max-sm:hidden">Trip-specific</span>
+                  {count(counts?.trip)}
+                </>
+              ),
+            },
           ]}
         />
         <div className="w-44 max-sm:w-full">

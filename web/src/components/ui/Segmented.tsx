@@ -17,7 +17,7 @@ export function Segmented<T extends string>({ legend, hideLegend, value, options
   return (
     <fieldset disabled={disabled} className="flex flex-col gap-1.5 border-0 p-0">
       <legend className={cn("mb-1.5 text-label font-semibold text-ink", hideLegend && "visually-hidden")}>{legend}</legend>
-      <div className="inline-flex w-fit rounded-lg border border-line bg-surface p-1">
+      <div className="grid w-full auto-cols-fr grid-flow-col rounded-lg border border-line bg-surface p-1 sm:inline-flex sm:w-fit">
         {options.map((o) => (
           <label key={o.value} className="relative">
             <input
@@ -30,7 +30,7 @@ export function Segmented<T extends string>({ legend, hideLegend, value, options
             />
             <span
               className={cn(
-                "flex h-9 items-center gap-1.5 rounded-md border border-transparent px-3 text-label font-semibold whitespace-nowrap text-ink transition-colors duration-150",
+                "flex h-9 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 text-label font-semibold whitespace-nowrap text-ink transition-colors duration-150 sm:px-3",
                 // Unselected: subtle hover. Selected: the UI Kit primary button (fill primary, stroke, white text,
                 // pressed colour on hover) — hover never overrides the selected fill.
                 "peer-[:not(:checked):hover]:bg-muted/60",
