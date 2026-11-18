@@ -93,8 +93,11 @@ export async function issueVerificationCode(
       `If you did not create an account, you can ignore this email.`,
     enquiryCode: "Email verification",
     bypassTestMode: true,
+    verificationCode: code,
+    expiresInMinutes: OTP_TTL_MINUTES,
   });
-  if (!result.ok) console.warn(`[verification] email to ${customer.email} failed: ${result.error}`);
+  if (result.ok) console.log(`[verification] code emailed to ${customer.email}`);
+  else console.warn(`[verification] email to ${customer.email} failed: ${result.error}`);
 
   return { sentTo: customer.email, emailSent: result.ok, expiresInMinutes: OTP_TTL_MINUTES, resendInSeconds: OTP_RESEND_SECONDS };
 }

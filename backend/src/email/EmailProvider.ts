@@ -2,7 +2,8 @@ export interface EmailMessage {
   to: string;
   toName: string;
   subject: string;
-  body: string;
+  body: string; // plain text
+  html: string; // branded HTML version (htmlTemplate.ts)
   enquiryCode: string;
   replyTo: string;
 }

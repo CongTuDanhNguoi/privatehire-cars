@@ -26,17 +26,16 @@ Dashboard → **Email Templates** → **Create New Template**, điền như sau:
 | **From Name** | `PrivateHire Cars Support` |
 | **Reply To** | `{{reply_to}}` |
 
-Content (bấm **Edit Content**, mỗi dòng dưới đây là một dòng riêng — Enter để xuống dòng):
+Content: bấm **Edit Content** → chọn **Code editor** (chế độ HTML), **xoá hết** nội dung có sẵn rồi dán đúng **một dòng**:
 ```
-{{message}}
-
-—
-Reference: {{enquiry_code}}
-PrivateHire Cars Customer Support
+{{{message_html}}}
 ```
 
-Không thêm dòng chào `Hi {{to_name}},` vào template: nhân viên đã tự viết lời chào trong nội dung phản hồi
-(ô soạn gợi ý sẵn "Hi Alex,"), thêm vào template sẽ thành "Hi Alex Morgan, Hi Alex,".
+- **3 dấu ngoặc nhọn** là bắt buộc: EmailJS chỉ hiển thị HTML khi dùng `{{{ }}}` (2 ngoặc sẽ in ra mã HTML thô).
+- Backend tự dựng sẵn cả email (dải navy "PrivateHire Cars", lời chào, nội dung, khung mã OTP to, chân thư
+  "PrivateHire Cars Customer Support" + "Reference: ENQ-…") trong `backend/src/email/htmlTemplate.ts`,
+  nên **không** thêm `Hi {{to_name}},`, `Reference`, chữ ký… vào template — sẽ bị lặp.
+- Backend vẫn gửi kèm `{{message}}` (bản chữ thường) và `{{enquiry_code}}` cho ai muốn dùng template dạng chữ.
 
 Bấm **Save**. Ghi lại **Template ID** (dạng `template_xxxxxxx`).
 
