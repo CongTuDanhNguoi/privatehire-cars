@@ -5,3 +5,4 @@ selftest/
 .env
 test-output*/
 .superpowers/
+.env.prod

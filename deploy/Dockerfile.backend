@@ -1,0 +1,11 @@
+# Production API. Runs TypeScript with tsx (the backend imports shared rules from app/src/validation).
+FROM node:24-alpine
+WORKDIR /workspace
+COPY backend/package*.json backend/
+RUN cd backend && npm ci --no-audit --no-fund
+COPY backend backend
+COPY app/src/validation app/src/validation
+WORKDIR /workspace/backend
+ENV NODE_ENV=production
+# db:init creates + seeds the database only when it is empty, and upgrades older schemas.
+CMD ["sh", "-c", "npm run db:init && npm start"]

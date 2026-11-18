@@ -21,8 +21,8 @@ const cookieOptions = (): CookieOptions => ({
   httpOnly: true,
   sameSite: "lax",
   path: "/",
-  // Demo runs on http://localhost; set `secure: true` when served over HTTPS.
-  secure: false,
+  // Local dev runs on http://localhost (not Secure). Deployed behind HTTPS: COOKIE_SECURE=true (.env.prod).
+  secure: process.env.COOKIE_SECURE === "true",
 });
 
 export function startSession(res: Response, kind: SessionKind, id: number): Date {
