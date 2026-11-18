@@ -10,6 +10,7 @@ import { EmptyState } from "../components/ui/Feedback";
 import { Select, TextField } from "../components/ui/Field";
 import { Icon } from "../components/ui/Icon";
 import { Segmented } from "../components/ui/Segmented";
+import { StatCards } from "../features/enquiries/StatCards";
 import { announce } from "../lib/announce";
 import { INBOX_QUERY_KEY, writeSession } from "../lib/storage";
 import { useAsync } from "../lib/useAsync";
@@ -101,7 +102,10 @@ export default function InboxPage() {
         </Button>
       </header>
 
-      <search className="flex flex-wrap items-end gap-4 rounded-xl border border-muted p-4">
+      <StatCards counts={counts} type={query.type} status={query.status} onPick={(changes) => update(changes)} />
+
+      <section aria-label="Enquiry list" className="overflow-hidden rounded-xl border border-muted bg-surface shadow-sm">
+      <search className="flex flex-wrap items-end gap-4 border-b border-muted p-4">
         <Segmented
           legend="Type"
           value={query.type}
@@ -119,7 +123,7 @@ export default function InboxPage() {
             <option value="RESOLVED">Resolved</option>
           </Select>
         </div>
-        <div className="min-w-72 flex-1">
+        <div className="min-w-60 flex-1">
           <TextField
             label="Search"
             type="search"
@@ -141,11 +145,13 @@ export default function InboxPage() {
       </search>
 
       {error ? (
+        <div className="p-4">
         <Alert variant="error" title="Enquiries could not be loaded." action={{ label: "Try again", onClick: reload }}>
           {error.message}
         </Alert>
+        </div>
       ) : data && data.total === 0 && !loading ? (
-        <div className="rounded-xl border border-muted">
+        <div>
           <EmptyState
             title="No enquiries match your filters"
             description="Try another type or status, or clear the search."
@@ -166,7 +172,7 @@ export default function InboxPage() {
             }${data ? `, ${data.total} results` : ""}`}
           />
           {data && data.total > 0 && (
-            <nav aria-label="Pagination" className="flex items-center justify-between gap-4">
+            <nav aria-label="Pagination" className="flex items-center justify-between gap-4 px-4 py-3">
               <p className="text-label text-ink">
                 Showing {firstItem}–{lastItem} of {data.total}
               </p>
@@ -187,6 +193,7 @@ export default function InboxPage() {
           )}
         </>
       )}
+      </section>
     </div>
   );
 }

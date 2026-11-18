@@ -36,6 +36,7 @@ export class EmailJsProvider implements EmailProvider {
             to_name: msg.toName,
             subject: msg.subject,
             message: msg.body,
+            message_html: msg.html, // used by the template as {{{message_html}}} (see docs/EMAILJS_SETUP.md)
             enquiry_code: msg.enquiryCode,
             reply_to: msg.replyTo,
           },

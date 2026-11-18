@@ -22,6 +22,25 @@ const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(e.message));
 
+// Test data: the database no longer ships mock customers, so make sure the demo account exists (created through the
+// real register API + email-verification code; @example.com codes are readable via /api/dev outside production).
+{
+  const DEMO = {
+    fullName: "Alex Morgan", email: "alex.morgan@example.com", homeAddress: "221B Baker St, London NW1 6XE",
+    phone: "+44 7911 123456", cardholderName: "Alex Morgan", cardNumber: "4242 4242 4242 4242", expiry: "12/30",
+    cvv: "123", password: "Password123", confirmPassword: "Password123",
+  };
+  const reg = await page.request.post(`${BASE}/api/customer/auth/register`, { data: DEMO });
+  if (reg.status() === 201) {
+    const codeRes = await page.request.get(`${BASE}/api/dev/last-verification-code?email=${encodeURIComponent(DEMO.email)}`);
+    const { code } = await codeRes.json();
+    const ver = await page.request.post(`${BASE}/api/customer/auth/verify-email`, { data: { email: DEMO.email, code } });
+    if (!ver.ok()) throw new Error(`Could not verify the demo account (HTTP ${ver.status()})`);
+  } else if (reg.status() !== 409) {
+    throw new Error(`Could not create the demo account (HTTP ${reg.status()}): ${await reg.text()}`);
+  }
+}
+
 const results = [];
 let shot = 0;
 const snap = async (label) => {
@@ -231,9 +250,25 @@ await test("AC-13", "Register: email đã tồn tại", "Đăng ký bằng alex.
 const NEW_EMAIL = `new.user+${Date.now()}@example.com`;
 
 // SCRUM-12 (DEF-05): đăng ký KHÔNG tự đăng nhập — Registration Complete → Go to Login → đăng nhập → Home.
-await test("AC-14", "Register thành công → Registration Complete → Go to Login → Home", "Dùng email mới → Create Account → Go to Login (email điền sẵn) → Log In", async (s) => {
+// P0-18: giữa Create Account và Registration Complete phải nhập mã OTP gửi qua email.
+// Email @example.com không bao giờ nhận được thư, nên backend (không phải production) giữ mã ở /api/dev cho self-test.
+await test("AC-14", "Register thành công → nhập OTP → Registration Complete → Go to Login → Home", "Dùng email mới → Create Account → nhập mã sai rồi mã đúng → Go to Login (email điền sẵn) → Log In", async (s) => {
   await page.fill("#email", NEW_EMAIL);
   await page.click("button[type=submit]");
+  await wait(800);
+  expect(pathname() === "/verify-email", `Đang ở ${pathname()} (đáng lẽ phải sang màn nhập mã OTP)`);
+  const codeRes = await page.request.get(`${BASE}/api/dev/last-verification-code?email=${encodeURIComponent(NEW_EMAIL)}`);
+  expect(codeRes.ok(), `Không đọc được mã OTP qua /api/dev (HTTP ${codeRes.status()})`);
+  const { code } = await codeRes.json();
+  const wrong = String((Number(code) + 1) % 1_000_000).padStart(6, "0");
+  await page.fill("#code", wrong);
+  await page.click('[data-testid="verify-code"]');
+  await wait(800);
+  expect(pathname() === "/verify-email", "Mã sai mà vẫn qua được");
+  expect(((await page.textContent("#code-error")) ?? "").includes("4 attempts left"), "Mã sai không báo số lần còn lại");
+  await s("verify-email-wrong-code");
+  await page.fill("#code", code);
+  await page.click('[data-testid="verify-code"]');
   await wait(800);
   expect(pathname() === "/register/complete", `Đang ở ${pathname()}`);
   expect((await page.textContent('[data-testid="registered-email"]')) === NEW_EMAIL, "Sai email trên màn Complete");
@@ -255,7 +290,7 @@ await test("AC-14", "Register thành công → Registration Complete → Go to L
   await page.goto(BASE + "/profile");
   await wait();
   expect((await page.textContent('[data-testid="profile-email"]')) === NEW_EMAIL, "Profile không hiện tài khoản mới");
-  return `Đăng ký không tự đăng nhập; đăng nhập lại → Home, Profile hiện ${NEW_EMAIL}`;
+  return `Mã OTP sai bị chặn, mã đúng → Complete; đăng ký không tự đăng nhập; đăng nhập lại → Home, Profile hiện ${NEW_EMAIL}`;
 });
 
 await test("AC-15", "Không có màn Booking Confirmation / Payment", "Kiểm tra danh sách route", async () => {

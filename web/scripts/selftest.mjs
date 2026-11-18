@@ -7,7 +7,7 @@
 //        EMAIL_PROVIDER=MOCK
 //        MOCK_EMAIL_FAIL=next
 //      then: docker compose up -d --force-recreate backend
-//   3. Fresh demo data: docker compose exec backend npm run db:reset
+//   3. Fresh mock demo data (the default database has none): docker compose exec backend npm run db:reset -- --demo
 //   4. Once: npx playwright install chromium
 // Run:  cd web && npm run selftest
 // Result: web/selftest/ — screenshots + report.html
@@ -76,17 +76,17 @@ await test("S02", "Login: để trống / sai mật khẩu / đúng", async (s) 
   expect((await page.textContent("#email-error"))?.includes("Email address is required."), "Thiếu lỗi email bắt buộc");
   expect((await page.textContent("#password-error"))?.includes("Password is required."), "Thiếu lỗi mật khẩu bắt buộc");
   await s("login-empty");
-  await page.fill("#email", "sarah.collins@privatehire.test");
+  await page.fill("#email", "admin@gmail.com");
   await page.fill("#password", "wrong-password");
   await page.click("button[type=submit]");
   await page.getByText("Incorrect email or password.").waitFor();
   await s("login-wrong");
-  await page.fill("#password", "Staff@2026");
+  await page.fill("#password", "123456");
   await page.click("button[type=submit]");
   await page.waitForURL("**/enquiries**");
   const settingsRes = await page.evaluate(() => fetch("/api/staff/email-settings").then((r) => r.json()));
   expect(settingsRes.provider === "MOCK", `Cần EMAIL_PROVIDER=MOCK (đang là ${settingsRes.provider}) — xem hướng dẫn đầu file`);
-  return "Sarah Collins đăng nhập, provider MOCK";
+  return "Admin đăng nhập, provider MOCK";
 });
 
 await test("S03", "Inbox mặc định lọc Awaiting, có số đếm", async (s) => {
@@ -137,7 +137,7 @@ await test("S06", "Gửi phản hồi trống → lỗi validation", async (s) =
 });
 
 await test("S07", "Gửi lỗi (MOCK_EMAIL_FAIL=next) → Failed, giữ nội dung → Retry → Sent + Resolved", async (s) => {
-  await page.fill("#reply-body", "Hi Alex,\n\nThe Seven-Seater has room for two extra cases and a pushchair.\n\nSarah");
+  await page.fill("#reply-body", "Hi Alex,\n\nThe Seven-Seater has room for two extra cases and a pushchair.\n\nPrivateHire Cars");
   await page.click("text=Send response");
   await page.getByText("Email could not be sent.").waitFor({ timeout: 15000 });
   expect((await page.inputValue("#reply-body")).includes("Seven-Seater"), "Nội dung bị mất sau khi gửi lỗi");
@@ -155,7 +155,7 @@ await test("S08", "Đổi tay Resolved → Awaiting → toast + lịch sử", as
   await page.getByText("Status updated").first().waitFor();
   await wait(800);
   const history = await page.locator("#status-history-title").locator("..").innerText();
-  expect(history.includes("Resolved → Awaiting") && history.includes("by Sarah Collins"), `Lịch sử sai: ${history}`);
+  expect(history.includes("Resolved → Awaiting") && history.includes("by Admin"), `Lịch sử sai: ${history}`);
   await s("status-manual");
 });
 

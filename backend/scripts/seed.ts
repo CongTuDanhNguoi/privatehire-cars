@@ -1,6 +1,8 @@
-// Seeds demo data: 2 staff, 3 customers, 4 bookings, 7 enquiries, 3 responses (1 FAILED).
+// Seeds the database. By default ONLY the Admin staff account (no mock customers / bookings / enquiries).
+// With { demo: true } (`npm run db:reset -- --demo`) it also adds the mock data the automated tests and demos use:
+// 3 customers, 4 bookings, 7 enquiries, 3 responses (1 FAILED).
 // Passwords are hashed with bcrypt (cost 10) at run time — no plain-text passwords in SQL.
-// Usually run through `npm run db:reset`; can also run alone on an empty schema: `npx tsx scripts/seed.ts`.
+// Can also run alone on an empty schema: `npx tsx scripts/seed.ts [--demo]`.
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import bcrypt from "bcryptjs";
@@ -9,10 +11,8 @@ import { connect, dbName, toSqlDateTime } from "./connect.js";
 
 const BCRYPT_COST = 10;
 
-const STAFF = [
-  { fullName: "Sarah Collins", email: "sarah.collins@privatehire.test", password: "Staff@2026" },
-  { fullName: "James Patel", email: "james.patel@privatehire.test", password: "Staff@2026" },
-] as const;
+// Only one staff account (demo login for the Staff Portal).
+const STAFF = [{ fullName: "Admin", email: "admin@gmail.com", password: "123456" }] as const;
 
 // The first customer must match the existing demo account of the customer app.
 const CUSTOMERS = [
@@ -31,7 +31,7 @@ const BOOKINGS = [
 ] as const satisfies ReadonlyArray<{ customer: CustomerKey } & Record<string, unknown>>;
 
 interface SeedResponse {
-  staff: 0 | 1; // index into STAFF
+  staff: 0; // index into STAFF
   body: string;
   status: "SENT" | "FAILED";
   minutesAfter: number; // sent this many minutes after the enquiry was created
@@ -70,7 +70,7 @@ const ENQUIRIES: SeedEnquiry[] = [
     message: "My company reimburses my business travel. Can you send me a VAT invoice for my rides each month, addressed to my employer? Please let me know what details you need from me.",
     response: {
       staff: 0, status: "SENT", minutesAfter: 95,
-      body: "Hi Emily,\n\nThank you for getting in touch. We can send a monthly VAT invoice addressed to your employer. Please reply with your company's registered name, address and VAT number, and we will add them to your account.\n\nKind regards,\nSarah Collins\nPrivateHire Cars Customer Support",
+      body: "Hi Emily,\n\nThank you for getting in touch. We can send a monthly VAT invoice addressed to your employer. Please reply with your company's registered name, address and VAT number, and we will add them to your account.\n\nKind regards,\nPrivateHire Cars Customer Support",
     },
   },
   {
@@ -83,8 +83,8 @@ const ENQUIRIES: SeedEnquiry[] = [
     subject: "Accessibility for wheelchair users",
     message: "My father uses a folding wheelchair. Are your vehicles able to carry a wheelchair, and can the driver help him get in and out of the car? We would like to book a trip for him next month.",
     response: {
-      staff: 1, status: "SENT", minutesAfter: 240,
-      body: "Hi Daniel,\n\nYes, all of our vehicles can carry a folding wheelchair, and our drivers are happy to help your father in and out of the car. Please mention it in the booking notes so we can allow a little extra time.\n\nBest wishes,\nJames Patel\nPrivateHire Cars Customer Support",
+      staff: 0, status: "SENT", minutesAfter: 240,
+      body: "Hi Daniel,\n\nYes, all of our vehicles can carry a folding wheelchair, and our drivers are happy to help your father in and out of the car. Please mention it in the booking notes so we can allow a little extra time.\n\nBest wishes,\nPrivateHire Cars Customer Support",
     },
   },
   {
@@ -93,14 +93,14 @@ const ENQUIRIES: SeedEnquiry[] = [
     message: "Which payment methods do you accept? I would prefer to pay with Apple Pay or a company credit card rather than the card I registered with.",
     response: {
       staff: 0, status: "FAILED", minutesAfter: 60,
-      body: "Hi Alex,\n\nWe accept all major credit and debit cards, Apple Pay and Google Pay. You can add a company card under Profile > Payment Details at any time.\n\nKind regards,\nSarah Collins\nPrivateHire Cars Customer Support",
+      body: "Hi Alex,\n\nWe accept all major credit and debit cards, Apple Pay and Google Pay. You can add a company card under Profile > Payment Details at any time.\n\nKind regards,\nPrivateHire Cars Customer Support",
     },
   },
 ];
 
 const enquiryCode = (id: number) => `ENQ-${String(id).padStart(6, "0")}`;
 
-export async function seedDatabase(conn: Connection): Promise<void> {
+export async function seedDatabase(conn: Connection, { demo = false }: { demo?: boolean } = {}): Promise<void> {
   const now = Date.now();
 
   const staffIds: number[] = [];
@@ -112,13 +112,15 @@ export async function seedDatabase(conn: Connection): Promise<void> {
     );
     staffIds.push(r.insertId);
   }
+  if (!demo) return; // real use: start empty, only the Admin account
 
   const customerIds = new Map<CustomerKey, { id: number; email: string }>();
   for (const c of CUSTOMERS) {
     const hash = await bcrypt.hash(c.password, BCRYPT_COST);
     const email = c.email.trim().toLowerCase();
     const [r] = await conn.execute<ResultSetHeader>(
-      "INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+      // Demo customers count as already verified.
+      "INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())",
       [c.fullName, email, c.phone, c.homeAddress, c.cardLast4, hash],
     );
     customerIds.set(c.key, { id: r.insertId, email });
@@ -181,7 +183,7 @@ export async function seedDatabase(conn: Connection): Promise<void> {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const conn = await connect({ database: dbName() });
   try {
-    await seedDatabase(conn);
+    await seedDatabase(conn, { demo: process.argv.includes("--demo") });
     console.log("Seed complete.");
   } finally {
     await conn.end();

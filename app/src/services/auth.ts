@@ -26,6 +26,7 @@ export type LoginResult =
   | { ok: true; user: SessionUser }
   | { ok: false; reason: "invalid" }
   | { ok: false; reason: "locked"; minutesLeft: number }
+  | { ok: false; reason: "unverified"; email: string } // đúng mật khẩu nhưng chưa xác nhận email (P0-18)
   | { ok: false; reason: "unavailable" }; // không kết nối được server
 
 export interface RegisteredUser {
@@ -33,7 +34,23 @@ export interface RegisteredUser {
   fullName: string;
 }
 
-export type RegisterResult = { ok: true; user: RegisteredUser } | { ok: false; errors: RegistrationErrors };
+// Thông tin mã xác nhận email vừa gửi (P0-18).
+export interface VerificationInfo {
+  sentTo: string;
+  emailSent: boolean; // false = gửi mail lỗi, người dùng bấm "Resend code"
+  expiresInMinutes: number;
+  resendInSeconds: number;
+}
+
+export type RegisterResult =
+  | { ok: true; user: RegisteredUser; verification: VerificationInfo }
+  | { ok: false; errors: RegistrationErrors };
+
+export type VerifyEmailResult = { ok: true; user: RegisteredUser } | { ok: false; error: string };
+
+export type ResendCodeResult =
+  | { ok: true; verification: VerificationInfo }
+  | { ok: false; error: string; retryAfterSeconds?: number };
 
 export const SERVER_UNAVAILABLE_MESSAGE = "Can't reach the server. Check your connection and try again.";
 
@@ -66,7 +83,14 @@ async function call(
 }
 
 const errorOf = (data: Record<string, unknown> | null) =>
-  (data?.error ?? {}) as { code?: string; message?: string; fields?: Record<string, string>; minutesLeft?: number };
+  (data?.error ?? {}) as {
+    code?: string;
+    message?: string;
+    fields?: Record<string, string>;
+    minutesLeft?: number;
+    retryAfterSeconds?: number;
+    email?: string;
+  };
 
 // ---------- phiên đăng nhập (bộ nhớ đệm) ----------
 let currentUser: SessionUser | null = null;
@@ -101,16 +125,38 @@ export async function isEmailRegistered(email: string): Promise<boolean> {
 
 // Đăng ký: server kiểm tra lỗi (cùng luật với src/validation) và lưu MySQL.
 // KHÔNG tự đăng nhập (SCRUM-12 / DEF-05): khách phải vào /login và nhập lại mật khẩu.
+// P0-18: server gửi mã 6 số tới email vừa đăng ký; phải nhập mã (/verify-email) mới đăng nhập được.
 export async function registerUser(form: RegistrationForm): Promise<RegisterResult> {
   const { status, data } = await call("/auth/register", { method: "POST", body: form });
   if (status === 201 && data?.user) {
     const user = data.user as RegisteredUser;
-    return { ok: true, user: { email: user.email, fullName: user.fullName } };
+    return {
+      ok: true,
+      user: { email: user.email, fullName: user.fullName },
+      verification: data.verification as VerificationInfo,
+    };
   }
   if (status === 0) return { ok: false, errors: { email: SERVER_UNAVAILABLE_MESSAGE } };
   const err = errorOf(data);
   if (err.fields && Object.keys(err.fields).length > 0) return { ok: false, errors: err.fields as RegistrationErrors };
   return { ok: false, errors: { email: err.message ?? SERVER_UNAVAILABLE_MESSAGE } };
+}
+
+// ---------- xác nhận email bằng mã OTP (P0-18) ----------
+export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResult> {
+  const { status, data } = await call("/auth/verify-email", { method: "POST", body: { email, code } });
+  if (status === 200 && data?.user) return { ok: true, user: data.user as RegisteredUser };
+  if (status === 0) return { ok: false, error: SERVER_UNAVAILABLE_MESSAGE };
+  const err = errorOf(data);
+  return { ok: false, error: err.fields?.code ?? err.message ?? SERVER_UNAVAILABLE_MESSAGE };
+}
+
+export async function resendVerificationCode(email: string): Promise<ResendCodeResult> {
+  const { status, data } = await call("/auth/resend-code", { method: "POST", body: { email } });
+  if (status === 200 && data?.verification) return { ok: true, verification: data.verification as VerificationInfo };
+  if (status === 0) return { ok: false, error: SERVER_UNAVAILABLE_MESSAGE };
+  const err = errorOf(data);
+  return { ok: false, error: err.message ?? SERVER_UNAVAILABLE_MESSAGE, retryAfterSeconds: err.retryAfterSeconds };
 }
 
 // ---------- đăng nhập ----------
@@ -123,6 +169,7 @@ export async function loginUser(email: string, password: string): Promise<LoginR
   if (status === 0) return { ok: false, reason: "unavailable" };
   const err = errorOf(data);
   if (status === 423) return { ok: false, reason: "locked", minutesLeft: err.minutesLeft ?? LOCK_MINUTES };
+  if (err.code === "EMAIL_NOT_VERIFIED") return { ok: false, reason: "unverified", email: err.email ?? email.trim() };
   // Không phân biệt "email chưa đăng ký" và "sai mật khẩu" để không lộ thông tin
   return { ok: false, reason: "invalid" };
 }

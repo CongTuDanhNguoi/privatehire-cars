@@ -18,6 +18,7 @@
 > | P0-8 | Docker (thay D10) | **Toàn bộ chạy bằng Docker**: `docker-compose.yml` ở gốc repo gồm `db` (MySQL 8.0, cổng máy 3307), `be` (:4000), `web` (:5174), `app` (:5173), chế độ dev (mount mã nguồn). `be` chạy `npm run db:init` (chỉ tạo + seed khi DB trống). Chạy trực tiếp bằng `npm run dev` vẫn được. |
 > | P0-9 | Validation dùng chung (Phase 4) | Staff Portal import luật đăng nhập từ `be/src/validation/staffLogin.ts` và luật phản hồi từ `be/src/validation/reply.ts` (không viết lại ở `web/src/lib`). |
 > | P0-17 | Merge sprint-1 của nhóm (sau Phase 8, **thay P0-13**) | `main` có commit sprint-1 (SCRUM-12/13/15/16/17/18) của nhóm. Theo bản của nhóm: đăng ký **không** tự đăng nhập → Registration Complete "Go to Login" → Login điền sẵn email. Backend `POST /api/customer/auth/register` không set cookie. Thêm `Cache-Control: no-store` cho mọi `/api` và `cache: "no-store"` ở client (Back/Forward từng trả lại `/me` cũ sau Log Out); logout dùng `keepalive`. |
+> | P0-18 | Xác nhận email bằng OTP khi đăng ký (app khách) | Create Account → màn **/verify-email** nhập mã 6 số → Registration Complete. Mã gửi bằng EmailJS (template hiện có) **luôn tới email người đăng ký** (bỏ qua Test mode), hiệu lực **10 phút**, sai **5 lần** phải xin mã mới, **Resend code** sau **60 giây**. Lưu HMAC-SHA256 của mã (bảng `email_verifications`), không lưu mã thô. Tài khoản chưa xác nhận: đúng mật khẩu → 403 `EMAIL_NOT_VERIFIED` → app chuyển sang /verify-email (sai mật khẩu vẫn chỉ báo lỗi chung). Tài khoản cũ/seed coi như đã xác nhận (`db:init` tự nâng cấp DB cũ). Email ở tên miền dành riêng cho test (`example.com/.net/.org`, `*.test`…) không gửi thật; khi không phải production, mã đọc được qua `GET /api/dev/last-verification-code?email=` cho self-test. |
 > | P0-16 | Cấu trúc repo (sau Phase 8, **thay P0-1 và D3**) | Repo đổi tên thành **`privatehire-cars`**, gồm 3 thư mục: **`app/`** (app Customer, chuyển từ gốc repo), **`web/`** (Staff Portal), **`backend/`** (đổi tên từ `be/`). Docker service tên `backend`; mã nguồn mount vào `/workspace`. Mọi chỗ ghi `be/`, `server/`, `staff-portal/` hay "app Customer ở gốc repo" bên dưới hiểu theo cấu trúc mới. |
 > | P0-13 | Đăng ký tự đăng nhập (Phase 6, **thay P0-2**) | Người dùng yêu cầu **không đổi bất cứ UI nào** của app Customer, nên giữ luồng cũ: đăng ký xong server set cookie `phc_customer` luôn → Registration Complete giữ nguyên "Go to Home". |
 > | P0-14 | Không đổi UI app Customer (Phase 6) | Không sửa giao diện màn nào đang có (kể cả Profile — **không** thêm mục Contact Support). Màn `/support` (form + My enquiries) là màn mới, chỉ mở bằng cách gõ đường dẫn `/support`. Email trùng chỉ báo khi bấm Create Account (409 từ server). Lỗi mất kết nối: Login dùng banner sẵn có; Register hiện dưới ô email. |
@@ -69,7 +70,7 @@ Yêu cầu triển khai:
 | D5 | Chế độ test email | **Bật mặc định**: mọi email chuyển về 1 hộp thư của nhóm; giao diện hiện nhãn rõ "Test mode". Tắt đi thì gửi đúng email khách |
 | D6 | Màn gửi Enquiry phía khách | **Thêm màn "Contact Support"** vào app Customer, mở từ trang **Profile** |
 | D7 | Trip-Specific Enquiry | Gắn với **booking mẫu** (seed sẵn trong MySQL). Khách chọn chuyến của mình trong form |
-| D8 | Tài khoản nhân viên | **Seed sẵn 2 tài khoản** (bcrypt). Không có trang quản lý tài khoản, **không phân quyền** |
+| D8 | Tài khoản nhân viên | **Seed sẵn 1 tài khoản Admin** (`admin@gmail.com`, bcrypt; trước đây 2 tài khoản). Không có trang quản lý tài khoản, **không phân quyền** |
 | D9 | Trạng thái | Gửi phản hồi **thành công → tự chuyển Resolved**. Nhân viên **tự đổi được** Awaiting ⇄ Resolved bất cứ lúc nào (kể cả mở lại) |
 | D10 | Môi trường demo | **localhost** (MySQL cài trên máy, chạy bằng `npm run dev`) |
 | D11 | Typography | **Inter** toàn bộ Staff Portal; cỡ chữ theo UI Kit + thêm **28px Bold** chỉ cho tiêu đề trang |
@@ -279,8 +280,7 @@ Mật khẩu băm bằng bcrypt (cost 10) lúc chạy seed, **không** ghi mật
 
 | Họ tên | Email | Mật khẩu |
 |---|---|---|
-| Sarah Collins | `sarah.collins@privatehire.test` | `Staff@2026` |
-| James Patel | `james.patel@privatehire.test` | `Staff@2026` |
+| Admin | `admin@gmail.com` | `123456` |
 
 **Customers** (tài khoản đầu tiên **phải trùng** tài khoản demo hiện có của app Customer):
 
@@ -635,7 +635,7 @@ Mỗi Phase: làm trên nhánh **`feature/staff-portal`** tạo từ `dev`; comm
 1. Mở app Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → Profile → Contact Support.
 2. Bấm Send khi để trống → lỗi hiện dưới từng ô.
 3. Chọn "About a trip" → chọn PHC-24051 → nhập tiêu đề + nội dung → gửi → thấy mã ENQ.
-4. Mở Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `sarah.collins@privatehire.test / Staff@2026`.
+4. Mở Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `admin@gmail.com / 123456`.
 5. Inbox (lọc Awaiting) → enquiry vừa gửi nằm trên cùng, badge **Trip**, đúng tên Alex.
 6. Lọc General / Trip → danh sách đổi đúng; tìm "child seat" → ra đúng enquiry.
 7. Mở enquiry vừa gửi → thấy thông tin khách + câu hỏi + **Trip details** đúng PHC-24051.

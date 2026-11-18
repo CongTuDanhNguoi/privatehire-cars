@@ -100,6 +100,8 @@ export default function LoginPage() {
     if (result.ok) navigate("/home", { replace: true });
     else if (result.reason === "locked") setBanner(LOGIN_MESSAGES.locked(result.minutesLeft));
     else if (result.reason === "unavailable") setBanner(SERVER_UNAVAILABLE_MESSAGE);
+    // Đúng mật khẩu nhưng chưa xác nhận email (P0-18) → sang màn nhập mã, có nút gửi lại mã.
+    else if (result.reason === "unverified") navigate("/verify-email", { state: { email: result.email, fromLogin: true } });
     else setBanner(LOGIN_MESSAGES.invalidCredentials);
   }
 

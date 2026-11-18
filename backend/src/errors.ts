@@ -12,6 +12,8 @@ export type ErrorCode =
   | "NOT_FOUND"
   | "CONFLICT"
   | "EMAIL_SEND_FAILED"
+  | "EMAIL_NOT_VERIFIED"
+  | "TOO_MANY_REQUESTS"
   | "INTERNAL_ERROR";
 
 const STATUS: Record<ErrorCode, number> = {
@@ -23,6 +25,8 @@ const STATUS: Record<ErrorCode, number> = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   EMAIL_SEND_FAILED: 502,
+  EMAIL_NOT_VERIFIED: 403,
+  TOO_MANY_REQUESTS: 429,
   INTERNAL_ERROR: 500,
 };
 
@@ -34,7 +38,7 @@ export class AppError extends Error {
     readonly code: ErrorCode,
     message: string,
     // `response` is only used by EMAIL_SEND_FAILED (the saved FAILED response record).
-    readonly extra: { fields?: FieldErrors; minutesLeft?: number; response?: unknown } = {},
+    readonly extra: { fields?: FieldErrors; minutesLeft?: number; retryAfterSeconds?: number; email?: string; response?: unknown } = {},
   ) {
     super(message);
     this.status = STATUS[code];

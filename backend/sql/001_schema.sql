@@ -18,7 +18,18 @@ CREATE TABLE customers (
   home_address  VARCHAR(255) NULL,
   card_last4    CHAR(4)      NULL,                  -- never the full card number, never the CVV
   password_hash VARCHAR(100) NOT NULL,
+  email_verified_at DATETIME NULL,                  -- NULL until the emailed one-time code is entered
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One active email-verification code per customer (6 digits, stored hashed).
+CREATE TABLE email_verifications (
+  customer_id  INT UNSIGNED PRIMARY KEY,
+  code_hash    CHAR(64)     NOT NULL,               -- HMAC-SHA256 of the code, never the code itself
+  expires_at   DATETIME     NOT NULL,
+  attempts     TINYINT UNSIGNED NOT NULL DEFAULT 0, -- wrong entries for this code
+  last_sent_at DATETIME     NOT NULL,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE bookings (

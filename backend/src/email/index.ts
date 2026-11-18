@@ -5,6 +5,7 @@ import { config } from "../config.js";
 import { EmailJsProvider } from "./EmailJsProvider.js";
 import type { EmailMessage, EmailProvider } from "./EmailProvider.js";
 import { MockEmailProvider } from "./MockEmailProvider.js";
+import { renderEmailHtml } from "./htmlTemplate.js";
 
 export const SEND_TIMEOUT_MS = 10_000;
 
@@ -38,15 +39,28 @@ export interface OutgoingEmail {
   subject: string;
   body: string;
   enquiryCode: string;
+  // Verification codes must reach the address being verified, so they ignore test mode (decision P0-18).
+  bypassTestMode?: boolean;
+  // Email verification: the code is shown in a large box in the HTML version.
+  verificationCode?: string;
+  expiresInMinutes?: number;
 }
 
 // Sends one email (with a hard timeout). Resolves with an error message on failure instead of throwing.
 export async function sendEmail(email: OutgoingEmail): Promise<{ ok: true } | { ok: false; error: string }> {
+  const redirect = emailSettings.testMode && !email.bypassTestMode;
   const msg: EmailMessage = {
-    to: deliveryAddressFor(email.customerEmail),
+    to: redirect ? deliveryAddressFor(email.customerEmail) : email.customerEmail,
     toName: email.customerName,
-    subject: emailSettings.testMode ? `[TEST → ${email.customerEmail}] ${email.subject}` : email.subject,
+    subject: redirect ? `[TEST → ${email.customerEmail}] ${email.subject}` : email.subject,
     body: email.body,
+    html: renderEmailHtml({
+      customerName: email.customerName,
+      body: email.body,
+      enquiryCode: email.enquiryCode,
+      verificationCode: email.verificationCode,
+      expiresInMinutes: email.expiresInMinutes,
+    }),
     enquiryCode: email.enquiryCode,
     replyTo: config.email.replyTo,
   };

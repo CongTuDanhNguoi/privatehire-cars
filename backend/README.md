@@ -26,17 +26,19 @@ Tạo `JWT_SECRET` ngẫu nhiên: `node -e "console.log(require('crypto').random
 | `npm run dev` | Chạy server, tự tải lại khi sửa code |
 | `npm start` | Chạy server (không theo dõi file) |
 | `npm run typecheck` / `npm run build` | Kiểm tra kiểu TypeScript (server chạy trực tiếp bằng `tsx`, không xuất file JS) |
-| `npm run db:reset` | **Xoá sạch** database rồi tạo lại + seed (dùng trước mỗi buổi demo) |
+| `npm run db:reset` | **Xoá sạch** database rồi tạo lại, chỉ có Admin. `npm run db:reset -- --demo`: thêm dữ liệu mẫu |
 | `npm run smoke` | Kiểm thử API tự động (47 bước). **Tự reset DB**, tự bật server riêng ở cổng 4100 với Mock email. Chạy xong nên `db:reset` lại |
 
 `.env` không được commit. Server **không khởi động** nếu cấu hình sai (ví dụ `JWT_SECRET` còn giá trị mẫu) và không bao giờ in giá trị bí mật ra log.
 
-## 2. Tài khoản mẫu (sau `db:reset`)
+## 2. Tài khoản mẫu
+
+`db:reset` / `db:init` chỉ tạo **Admin**. Các tài khoản khách bên dưới (và chuyến, enquiry mẫu) chỉ có sau
+`npm run db:reset -- --demo` (smoke test tự dùng `--demo`).
 
 | Loại | Email | Mật khẩu |
 |---|---|---|
-| Staff | `sarah.collins@privatehire.test` | `Staff@2026` |
-| Staff | `james.patel@privatehire.test` | `Staff@2026` |
+| Staff (Admin) | `admin@gmail.com` | `123456` |
 | Customer | `alex.morgan@example.com` | `Password123` |
 | Customer | `emily.clarke@example.com` | `Password123` |
 | Customer | `daniel.brooks@example.com` | `Password123` |
@@ -93,8 +95,11 @@ Luật kiểm tra dữ liệu khách (email, đăng ký...) **dùng lại nguyê
 | Method & path | Cần đăng nhập | Body / query | Trả về |
 |---|---|---|---|
 | `GET /api/health` | — | — | 200 `{ status: "ok", database: "up" }` · 503 khi mất DB |
-| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName } }` — **không** tự đăng nhập (SCRUM-12, P0-17) · 400 kèm `fields` · 409 email trùng |
-| `POST /api/customer/auth/login` | — | `{ email, password }` | 200 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` · 400 · 401 · 423 |
+| `POST /api/customer/auth/register` | — | `{ fullName, email, homeAddress, phone, cardholderName, cardNumber, expiry, cvv, password, confirmPassword }` | 201 `{ user: { email, fullName }, verification: { sentTo, emailSent, expiresInMinutes, resendInSeconds } }` — **không** tự đăng nhập (SCRUM-12, P0-17); gửi mã OTP 6 số tới email (P0-18) · 400 kèm `fields` · 409 email trùng |
+| `POST /api/customer/auth/verify-email` | — | `{ email, code }` | 200 `{ user, verified: true }` · 400 `fields.code` (sai định dạng / sai mã "N attempts left" / hết hạn / quá 5 lần) |
+| `POST /api/customer/auth/resend-code` | — | `{ email }` | 200 `{ verification }` (email lạ / đã xác nhận cũng trả 200 giống hệt) · 429 `retryAfterSeconds` khi chưa đủ 60 giây |
+| `GET /api/dev/last-verification-code?email=` | — | — | **Chỉ khi NODE_ENV ≠ production**, chỉ với mã không gửi thật (MOCK hoặc email `@example.com`…): 200 `{ code }` · 404 |
+| `POST /api/customer/auth/login` | — | `{ email, password }` | 200 `{ user: { email, fullName, loggedInAt } }` + cookie `phc_customer` · 400 · 401 · 403 `EMAIL_NOT_VERIFIED` (đúng mật khẩu nhưng chưa nhập mã OTP; kèm `email`) · 423 |
 | `POST /api/customer/auth/logout` | — | — | 204, xoá cookie |
 | `GET /api/customer/auth/me` | customer | — | 200 `{ user }` · 401 |
 | `GET /api/customer/auth/email-exists?email=` | — | — | 200 `{ exists }` |
@@ -153,9 +158,9 @@ curl -s $B/health                                                     # {"status
 # ---- Staff ----
 curl -s $J -d '{}' $B/staff/auth/login                                # 400 Email address is required. / Password is required.
 curl -s $J -d '{"email":"sarah@","password":"x"}' $B/staff/auth/login # 400 Enter a valid email address.
-curl -s $J -d '{"email":"sarah.collins@privatehire.test","password":"wrong"}' $B/staff/auth/login   # 401 Incorrect email or password.
-curl -s -c staff.txt $J -d '{"email":"sarah.collins@privatehire.test","password":"Staff@2026"}' $B/staff/auth/login   # 200 + cookie phc_staff
-curl -s -b staff.txt $B/staff/auth/me                                 # 200 Sarah Collins
+curl -s $J -d '{"email":"admin@gmail.com","password":"wrong"}' $B/staff/auth/login   # 401 Incorrect email or password.
+curl -s -c staff.txt $J -d '{"email":"admin@gmail.com","password":"123456"}' $B/staff/auth/login   # 200 + cookie phc_staff
+curl -s -b staff.txt $B/staff/auth/me                                 # 200 Admin
 curl -s -b staff.txt -c staff.txt -X POST $B/staff/auth/logout        # 204
 
 # ---- Customer ----
@@ -174,9 +179,9 @@ curl -s -b staff.txt $B/customer/auth/me                              # 401 (coo
 curl -s -b cust.txt  $B/staff/auth/me                                 # 401 (và ngược lại)
 
 # ---- Khoá đăng nhập: 5 lần sai liên tiếp ----
-for i in 1 2 3 4 5; do curl -s $J -d '{"email":"james.patel@privatehire.test","password":"wrong"}' $B/staff/auth/login; echo; done
+for i in 1 2 3 4 5; do curl -s $J -d '{"email":"admin@gmail.com","password":"wrong"}' $B/staff/auth/login; echo; done
 # lần 1–4: 401 · lần 5: 423 Too many failed attempts. Try again in 15 minutes. (minutesLeft: 15)
-curl -s $J -d '{"email":"james.patel@privatehire.test","password":"Staff@2026"}' $B/staff/auth/login   # vẫn 423 khi đang khoá
+curl -s $J -d '{"email":"admin@gmail.com","password":"123456"}' $B/staff/auth/login   # vẫn 423 khi đang khoá
 ```
 
 Kết quả chạy thật ngày 17/11/2026: tất cả các lệnh trên trả đúng mã HTTP và câu thông báo như chú thích.

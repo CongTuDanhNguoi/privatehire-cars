@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import logo from "../assets/logo.png";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
+import { Icon } from "../components/ui/Icon";
 import { TextField } from "../components/ui/Field";
 import { announce } from "../lib/announce";
 import {
@@ -13,6 +14,12 @@ import {
   validateStaffLogin,
   type StaffLoginErrors,
 } from "../../../backend/src/validation/staffLogin";
+
+const FEATURES = [
+  "General & trip-specific enquiries",
+  "Email replies with retry on failure",
+  "Awaiting / Resolved at a glance",
+];
 
 export default function LoginPage() {
   const { signIn, notice, clearNotice } = useAuth();
@@ -79,10 +86,29 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-muted px-4 py-12">
-      <div className="w-[440px] rounded-xl border border-muted bg-surface p-8">
+    <main className="grid min-h-dvh grid-cols-2">
+      {/* Brand panel (decorative summary of what the portal does). */}
+      <section aria-label="About the Staff Portal" className="flex flex-col justify-between bg-ink p-16 text-surface">
+        <img src={logo} alt="PrivateHire Cars" width={140} height={72} className="h-14 w-fit rounded-lg bg-surface p-1" />
+        <div className="flex max-w-[460px] flex-col gap-8">
+          <p className="text-page font-bold">Customer enquiries, answered fast.</p>
+          <ul className="flex flex-col gap-4 text-body">
+            {FEATURES.map((feature) => (
+              <li key={feature} className="flex items-center gap-3">
+                <span className="flex size-7 items-center justify-center rounded-full bg-surface/10 text-success">
+                  <Icon name="check" size={16} />
+                </span>
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="text-helper text-surface/70">PrivateHire Cars · Staff Portal</p>
+      </section>
+
+      <div className="flex items-center justify-center bg-surface px-8 py-12">
+      <div className="w-[400px]">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <img src={logo} alt="PrivateHire Cars" width={140} height={72} className="h-[72px] w-auto" />
           <h1 className="text-page font-bold text-ink">Staff Portal</h1>
           <p className="text-body text-ink">Sign in to manage customer enquiries</p>
         </div>
@@ -141,6 +167,7 @@ export default function LoginPage() {
             </Button>
           </form>
         </div>
+      </div>
       </div>
     </main>
   );

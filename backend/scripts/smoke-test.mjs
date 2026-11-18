@@ -81,7 +81,7 @@ function client() {
 
 // ---------- run ----------
 console.log("Resetting database...");
-const reset = spawnSync(process.execPath, ["--import", "tsx", "scripts/db-reset.ts"], { cwd: BE_ROOT, encoding: "utf8" });
+const reset = spawnSync(process.execPath, ["--import", "tsx", "scripts/db-reset.ts", "--demo"], { cwd: BE_ROOT, encoding: "utf8" });
 if (reset.status !== 0) {
   console.error(reset.stdout, reset.stderr);
   process.exit(1);
@@ -137,8 +137,8 @@ try {
 
   // ===== Staff =====
   const staff = client();
-  r = await staff("POST", "/staff/auth/login", { email: "sarah.collins@privatehire.test", password: "Staff@2026" });
-  check("staff login (Sarah)", r.status === 200);
+  r = await staff("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
+  check("staff login (Admin)", r.status === 200);
 
   r = await alex("GET", "/staff/enquiries");
   check("customer cookie on staff API → 401", r.status === 401);
@@ -203,7 +203,7 @@ try {
   check("send with invalid clientRequestId → 400", r.status === 400);
 
   const reqId = randomUUID();
-  const reply = { clientRequestId: reqId, subject: "Re: [ENQ-000008] Flight number for pickup", body: "Hi Alex,\n\nThanks — we have added BA1234 to your booking.\n\nSarah" };
+  const reply = { clientRequestId: reqId, subject: "Re: [ENQ-000008] Flight number for pickup", body: "Hi Alex,\n\nThanks — we have added BA1234 to your booking.\n\nPrivateHire Cars" };
   r = await staff("POST", `/staff/enquiries/${tripId}/responses`, reply);
   check(
     "send reply → 201 SENT, enquiry auto RESOLVED",
@@ -233,8 +233,8 @@ try {
   check("same status again → 200", r.status === 200);
   r = await staff("GET", `/staff/enquiries/${tripId}`);
   check(
-    "manual change recorded once (MANUAL by Sarah)",
-    r.json.statusHistory.length === 2 && r.json.statusHistory[0].reason === "MANUAL" && r.json.statusHistory[0].changedBy?.fullName === "Sarah Collins",
+    "manual change recorded once (MANUAL by Admin)",
+    r.json.statusHistory.length === 2 && r.json.statusHistory[0].reason === "MANUAL" && r.json.statusHistory[0].changedBy?.fullName === "Admin",
     JSON.stringify(r.json.statusHistory),
   );
   r = await staff("PATCH", `/staff/enquiries/${tripId}/status`, { status: "CLOSED" });
@@ -243,7 +243,7 @@ try {
   // --- failure + retry (MOCK_EMAIL_FAIL=always, then never) ---
   await startServer("always");
   const staff2 = client();
-  await staff2("POST", "/staff/auth/login", { email: "james.patel@privatehire.test", password: "Staff@2026" });
+  await staff2("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
   r = await staff2("POST", `/staff/enquiries/${generalId}/responses`, { clientRequestId: randomUUID(), subject: "Re: Pet friendly rides", body: "Yes, small pets in a carrier are welcome." });
   check(
     "MOCK_EMAIL_FAIL=always → 502 EMAIL_SEND_FAILED, response FAILED saved",
@@ -258,7 +258,7 @@ try {
 
   await startServer("never");
   const staff3 = client();
-  await staff3("POST", "/staff/auth/login", { email: "james.patel@privatehire.test", password: "Staff@2026" });
+  await staff3("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
   r = await staff3("POST", `/staff/responses/${failedId}/retry`);
   check(
     "MOCK_EMAIL_FAIL=never → retry 200 SENT, same record, enquiry RESOLVED",
@@ -272,6 +272,53 @@ try {
   const seedFailed = (await staff3("GET", `/staff/enquiries/${r.json.items[0].id}`)).json.responses[0];
   r = await staff3("POST", `/staff/responses/${seedFailed.id}/retry`);
   check("retry seeded FAILED response (ENQ-000001) → SENT", r.status === 200 && r.json.response.sendStatus === "SENT");
+
+  // ===== Email verification (P0-18) =====
+  const form = (email) => ({
+    fullName: "Olivia Test", email, homeAddress: "1 Test Street", phone: "07911 123456",
+    cardholderName: "Olivia Test", cardNumber: "4242 4242 4242 4242", expiry: "12/30", cvv: "123",
+    password: "Password123", confirmPassword: "Password123",
+  });
+  const otpEmail = "otp.user@example.com";
+  const newbie = client();
+  const devCode = async (email) => (await newbie("GET", `/dev/last-verification-code?email=${encodeURIComponent(email)}`)).json?.code;
+  r = await newbie("POST", "/customer/auth/register", form(otpEmail));
+  check(
+    "register → 201 + verification code emailed (no session)",
+    r.status === 201 && r.json.verification?.emailSent === true && r.json.verification.resendInSeconds === 60,
+    JSON.stringify(r.json),
+  );
+  const code1 = await devCode(otpEmail);
+  check("mock code is 6 digits", /^\d{6}$/.test(code1 ?? ""), String(code1));
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Password123" });
+  check("login before verifying → 403 EMAIL_NOT_VERIFIED", r.status === 403 && r.json.error.code === "EMAIL_NOT_VERIFIED", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Wrong1234" });
+  check("unverified + wrong password → 401 (no hint)", r.status === 401 && r.json.error.code === "INVALID_CREDENTIALS");
+  r = await newbie("POST", "/customer/auth/resend-code", { email: otpEmail });
+  check("resend within 60 s → 429 with retryAfterSeconds", r.status === 429 && r.json.error.retryAfterSeconds > 0, JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: "12a" });
+  check("verify bad format → 400", r.status === 400 && r.json.error.fields?.code === "The code must be 6 digits.", JSON.stringify(r.json));
+  const wrong = String((Number(code1) + 1) % 1_000_000).padStart(6, "0");
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: wrong });
+  check("verify wrong code → 400, 4 attempts left", r.status === 400 && r.json.error.fields?.code === "The code is incorrect. 4 attempts left.", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: otpEmail, code: code1.slice(0, 3) + " " + code1.slice(3) });
+  check("verify right code (with a space) → 200", r.status === 200 && r.json.verified === true && r.json.user.email === otpEmail, JSON.stringify(r.json));
+  check("code removed after use", (await devCode(otpEmail)) === undefined);
+  r = await newbie("POST", "/customer/auth/login", { email: otpEmail, password: "Password123" });
+  check("login after verifying → 200", r.status === 200 && r.json.user.email === otpEmail);
+  r = await newbie("POST", "/customer/auth/resend-code", { email: otpEmail });
+  check("resend for verified email → generic 200", r.status === 200);
+  r = await newbie("POST", "/customer/auth/resend-code", { email: "nobody@example.com" });
+  check("resend for unknown email → same generic 200", r.status === 200 && r.json.verification.sentTo === "nobody@example.com");
+
+  const lockedEmail = "otp.locked@example.com";
+  await newbie("POST", "/customer/auth/register", form(lockedEmail));
+  const code2 = await devCode(lockedEmail);
+  const wrong2 = String((Number(code2) + 1) % 1_000_000).padStart(6, "0");
+  for (let i = 0; i < 5; i++) r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: wrong2 });
+  check("5th wrong code → too many attempts", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.", JSON.stringify(r.json));
+  r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: code2 });
+  check("right code after 5 wrong → still blocked", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.");
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);
@@ -280,5 +327,5 @@ try {
 }
 
 console.log(`\n${passed}/${passed + failed} PASS`);
-console.log("Note: the database now contains test data — run `npm run db:reset` before a demo.");
+console.log("Note: the database now contains test data — run `npm run db:reset` (empty) or `npm run db:reset -- --demo` (mock data) afterwards.");
 process.exit(failed ? 1 : 0);

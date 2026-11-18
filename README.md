@@ -80,14 +80,14 @@ Lần đầu mất vài phút (tải image + cài thư viện). Sau đó mở:
 | <http://localhost:4000/api/health> | Kiểm tra backend + database (`{"status":"ok","database":"up"}`) |
 | `localhost:3307` | MySQL (user `root`, mật khẩu `privatehire`) — cổng 3307 để không đụng MySQL cài trên máy |
 
-Database được **tự tạo + nạp dữ liệu mẫu** ở lần chạy đầu (`db:init`), các lần sau giữ nguyên dữ liệu.
+Database được **tự tạo (chỉ có tài khoản Admin, không có dữ liệu mẫu)** ở lần chạy đầu (`db:init`), các lần sau giữ nguyên dữ liệu.
 
 | Lệnh | Tác dụng |
 |---|---|
 | `docker compose up -d` | Bật cả hệ thống |
 | `docker compose ps` | Xem trạng thái 4 container (`db`, `backend`, `web`, `app`) |
 | `docker compose logs -f backend` | Xem log backend (email Mock được in ở đây) |
-| `docker compose exec backend npm run db:reset` | **Xoá sạch** dữ liệu rồi nạp lại dữ liệu mẫu — chạy trước mỗi buổi demo |
+| `docker compose exec backend npm run db:reset` | **Xoá sạch** dữ liệu, chỉ để lại tài khoản Admin (thêm `-- --demo` để nạp dữ liệu mẫu) — chạy trước mỗi buổi demo |
 | `docker compose up -d --force-recreate backend` | Khởi động lại backend sau khi sửa `backend/.env` |
 | `docker compose down` | Tắt (dữ liệu vẫn giữ) |
 | `docker compose down -v` | Tắt **và xoá** database + thư viện đã cài |
@@ -120,17 +120,19 @@ npm run dev                 # http://localhost:5174
 
 ## 4. Tài khoản demo và dữ liệu mẫu
 
+**Mặc định database trống**: chỉ có tài khoản Admin (cả bản dev lẫn bản deploy). Khách hàng tự đăng ký trên app (có OTP).
+Dữ liệu mẫu bên dưới (khách, chuyến, enquiry) **chỉ có khi chạy** `docker compose exec backend npm run db:reset -- --demo`
+— dùng cho test Staff Portal / buổi demo. Test app (`npm run selftest`) tự tạo tài khoản Alex qua API nếu chưa có.
 Mật khẩu được băm bcrypt khi nạp dữ liệu, không lưu dạng thô.
 
 | Loại | Email | Mật khẩu | Dùng ở |
 |---|---|---|---|
-| Nhân viên | `sarah.collins@privatehire.test` | `Staff@2026` | Staff Portal |
-| Nhân viên | `james.patel@privatehire.test` | `Staff@2026` | Staff Portal |
-| Khách | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
+| Nhân viên (Admin) | `admin@gmail.com` | `123456` | Staff Portal — tài khoản nhân viên duy nhất |
+| Khách *(chỉ với `--demo`)* | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
 | Khách | `emily.clarke@example.com` | `Password123` | App Customer (chuyến PHC-24053) |
 | Khách | `daniel.brooks@example.com` | `Password123` | App Customer (chuyến PHC-24054) |
 
-Dữ liệu mẫu có **7 enquiry** (General + Trip, Awaiting + Resolved) và **3 phản hồi**, trong đó 1 phản hồi **Failed**
+Dữ liệu mẫu (`--demo`) có **7 enquiry** (General + Trip, Awaiting + Resolved) và **3 phản hồi**, trong đó 1 phản hồi **Failed**
 (ENQ-000001) để demo nút **Retry**. Staff Portal không có trang đăng ký nhân viên (theo kế hoạch: tài khoản seed sẵn).
 
 **Dữ liệu hợp lệ để điền nhanh form Đăng ký** (dữ liệu test, không phải thẻ thật):
@@ -164,7 +166,7 @@ EMAILJS mà thiếu key, hoặc bật Test mode mà thiếu hộp thư nhận �
 
 ```
 Welcome ──Log In──► Login ──đúng──────────────────────────────────► Home
-   └────Sign Up───► Registration ──hợp lệ──► Registration Complete ──Go to Login──► Login (email điền sẵn) ──► Home
+   └────Sign Up───► Registration ──hợp lệ──► Verify Email (mã OTP 6 số qua email) ──đúng mã──► Registration Complete ──Go to Login──► Login (email điền sẵn) ──► Home
 
 Home ──Book a Ride / View All Services──► Service Selection ──Continue──► Journey Details
                                               ▲                               │
@@ -178,6 +180,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 | `/` | Welcome | Chỉ khi **chưa** đăng nhập (đã đăng nhập → tự sang `/home`) |
 | `/login` | Login | Chỉ khi chưa đăng nhập |
 | `/register` | Registration | Chỉ khi chưa đăng nhập |
+| `/verify-email` | Nhập mã OTP xác nhận email | Chỉ khi chưa đăng nhập; ngay sau khi đăng ký, hoặc khi đăng nhập bằng tài khoản chưa xác nhận |
 | `/register/complete` | Registration Complete | Ngay sau khi đăng ký (chưa đăng nhập — bấm "Go to Login") |
 | `/home` | Home | **Bắt buộc đăng nhập** |
 | `/services` | Service Selection | **Bắt buộc đăng nhập** |
@@ -192,6 +195,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 - Đăng nhập / đăng ký lưu trong **MySQL** qua API (`app/src/services/auth.ts` giữ nguyên tên hàm + kiểu trả về như bản giả lập cũ).
   Phiên là cookie httpOnly; `getCurrentUser()` đọc bộ nhớ đệm được nạp bằng `initSession()` khi mở app.
 - Đăng ký xong **không tự đăng nhập** (SCRUM-12 / DEF-05): Registration Complete → **Go to Login** → email được điền sẵn → nhập mật khẩu → Home.
+- **Xác nhận email bằng OTP (P0-18):** sau Create Account, mã 6 số được gửi thật (EmailJS) tới email vừa đăng ký — kể cả khi bật Test mode. Mã hết hạn sau 10 phút, sai 5 lần phải bấm **Resend code** (cho bấm lại sau 60 giây). Chưa nhập mã thì đăng nhập (đúng mật khẩu) sẽ được chuyển sang màn nhập mã. Email `@example.com` (dùng trong self-test) không gửi thật — mã đọc qua `/api/dev/last-verification-code` (chỉ khi không phải production).
 - Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
 - Sai mật khẩu 5 lần liên tiếp → khoá 15 phút (lưu ở server).
 - Phần chuyển sang MySQL không đổi giao diện màn nào; thay đổi giao diện của sprint-1 (Registration Complete, Login điền sẵn email, Journey Details, Vehicle Size, Availability) là của nhóm. `/support` là màn mới.
@@ -367,7 +371,7 @@ Trước buổi demo: `docker compose up -d` → `docker compose exec backend np
 1. App Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → **gõ `localhost:5173/support`** (không có nút trong Profile).
 2. Bấm **Send enquiry** khi để trống → lỗi hiện dưới từng ô.
 3. Chọn **About a trip** → PHC-24051 → nhập tiêu đề + nội dung → gửi → thấy mã **ENQ-000008**.
-4. Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `sarah.collins@privatehire.test / Staff@2026`.
+4. Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `admin@gmail.com / 123456`.
 5. Inbox (lọc Awaiting) → enquiry vừa gửi nằm trên cùng, badge **Trip**, tên Alex.
 6. Lọc General / Trip-specific → danh sách đổi đúng; tìm "child seat" → ra đúng 1 enquiry.
 7. Mở enquiry vừa gửi → thông tin khách + câu hỏi + **Trip details** PHC-24051.

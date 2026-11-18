@@ -10,15 +10,33 @@ import {
   isCustomerEmailRegistered,
   registerCustomer,
 } from "../services/customerAuthService.js";
+import {
+  issueVerificationCode,
+  resendVerificationCode,
+  verifyEmailCode,
+} from "../services/emailVerificationService.js";
 import { endSession, startSession } from "../services/session.js";
-import { EmailQuery, LoginBody, RegisterBody, parseInput } from "../validation/auth.js";
+import { EmailQuery, LoginBody, RegisterBody, VerifyEmailBody, parseInput } from "../validation/auth.js";
 
 export const customerAuthRouter = Router();
 
 customerAuthRouter.post("/register", async (req, res) => {
-  // SCRUM-12 / decision P0-17: registering does NOT sign the customer in — they log in afterwards.
-  const { user } = await registerCustomer(parseInput(RegisterBody, req.body));
-  res.status(201).json({ user });
+  // SCRUM-12 / P0-17: registering does NOT sign the customer in.
+  // P0-18: the account starts unverified and a 6-digit code is emailed to the customer.
+  const { id, user } = await registerCustomer(parseInput(RegisterBody, req.body));
+  const verification = await issueVerificationCode({ id, ...user }, { enforceCooldown: false });
+  res.status(201).json({ user, verification });
+});
+
+customerAuthRouter.post("/verify-email", async (req, res) => {
+  const { email, code } = parseInput(VerifyEmailBody, req.body);
+  const user = await verifyEmailCode(email, code);
+  res.json({ user, verified: true });
+});
+
+customerAuthRouter.post("/resend-code", async (req, res) => {
+  const { email } = parseInput(EmailQuery, req.body);
+  res.json({ verification: await resendVerificationCode(email) });
 });
 
 customerAuthRouter.post("/login", loginRateLimit("CUSTOMER", LOGIN_MESSAGES.locked), async (req, res) => {

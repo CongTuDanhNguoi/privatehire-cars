@@ -1,0 +1,59 @@
+# Production stack on this machine (separate from the dev stack in docker-compose.yml; both can run together).
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   Public links: docker compose -f docker-compose.prod.yml logs tunnel-app tunnel-staff | findstr trycloudflare
+name: privatehire-prod
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.prod}
+      MYSQL_DATABASE: privatehire
+    volumes:
+      - db-prod:/var/lib/mysql
+    # No "ports": MySQL is reachable only by the backend inside Docker.
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build: { context: ., dockerfile: deploy/Dockerfile.backend }
+    restart: unless-stopped
+    env_file: [.env.prod]
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_NAME: privatehire
+      PORT: "4000"
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build: { context: ., dockerfile: deploy/Dockerfile.frontend }
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # customer app  → http://localhost:8080
+      - "8081:8081" # Staff Portal  → http://localhost:8081
+    depends_on: [backend]
+
+  # Cloudflare Quick Tunnels: random https://*.trycloudflare.com links (change on every restart).
+  tunnel-app:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8080
+    depends_on: [web]
+
+  tunnel-staff:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8081
+    depends_on: [web]
+
+volumes:
+  db-prod:

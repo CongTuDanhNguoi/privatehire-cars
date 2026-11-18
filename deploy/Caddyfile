@@ -1,0 +1,30 @@
+{
+	# HTTPS is handled by Cloudflare Tunnel; Caddy only serves plain HTTP inside Docker.
+	auto_https off
+}
+
+# Customer app
+:8080 {
+	encode gzip
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+	handle {
+		root * /srv/app
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Staff Portal
+:8081 {
+	encode gzip
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -59,7 +59,7 @@ export default function RegistrationCompletePage() {
                 {email}
               </p>
               <p className={`${FONT} pt-2 text-[11px] leading-[18px] text-[#64748b]`}>
-                A confirmation email has been simulated for this prototype. Email activation is not required.
+                Your email address has been verified with the code we sent.
               </p>
             </div>
           </div>
