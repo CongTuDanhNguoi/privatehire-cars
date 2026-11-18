@@ -1,14 +1,14 @@
 // =============================================================
-// RegisterPage — màn Đăng ký chạy thật.
-// Giao diện dựng theo Figma "Screen 2A / 2B — Registration" (6:499, 6:638):
-// header Cancel | logo + Registration | Login, 3 nhóm ô nhập, nút Create Account.
-// Lỗi hiển thị giống Figma: viền đỏ 2px, icon (!) ở ô email, câu lỗi đỏ bên dưới.
+// RegisterPage — màn Đăng ký chạy thật, dựng theo thiết kế Sprint 1
+// "2. Registration Form" + "2A. Registration Validation Errors":
+// header logo | Registration | Login, ô nhập viền xám, lỗi: viền đỏ + nền đỏ nhạt + "* <câu lỗi>" bên dưới,
+// nhóm PAYMENT INFORMATION / ACCOUNT SECURITY, nút Create Account (primary).
+// Câu báo lỗi lấy từ src/validation (yêu cầu bắt buộc). Logic (định dạng thẻ, ngày hết hạn, OTP) giữ như cũ.
 // =============================================================
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
-import Icon, { type IconName } from "../components/Icon";
-import MobileFrame from "../components/MobileFrame";
+import Icon from "../components/Icon";
+import { AuthField, AuthFrame, AuthNav, BrandLogo, NavLinkButton, PrimaryButton } from "../components/auth/AuthUi";
 import {
   EMPTY_REGISTRATION,
   REGISTRATION_FIELDS,
@@ -21,88 +21,14 @@ import {
 import { formatCardNumber, formatExpiry } from "../validation/format";
 import { registerUser } from "../services/auth";
 
-const FONT = "font-['Inter',sans-serif]";
-
-// ---------- ô nhập ----------
-interface FieldProps {
-  name: RegistrationField;
-  label: string;
-  value: string;
-  error?: string;
-  type?: string;
-  inputMode?: "text" | "email" | "tel" | "numeric";
-  autoComplete?: string;
-  placeholder?: string;
-  maxLength?: number;
-  showErrorIcon?: boolean;
-  trailing?: ReactNode;
-  inputRef?: (el: HTMLInputElement | null) => void;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onBlur: () => void;
-}
-
-function Field({ name, label, value, error, type = "text", inputMode, autoComplete, placeholder, maxLength, showErrorIcon, trailing, inputRef, onChange, onBlur }: FieldProps) {
-  const errorId = `${name}-error`;
-  const hasError = Boolean(error);
-  const padRight = trailing || (hasError && showErrorIcon) ? "pr-10" : "pr-[15px]";
+function SectionTitle({ title }: { title: string }) {
   return (
-    <div className="flex w-full flex-col">
-      <label htmlFor={name} className={`${FONT} pb-1 text-[12px] leading-4 font-semibold text-[#1e293b]`}>
-        {label} <span className="text-[#ef4444]">*</span>
-      </label>
-      <div className="relative w-full">
-        <input
-          id={name}
-          name={name}
-          ref={inputRef}
-          type={type}
-          inputMode={inputMode}
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          maxLength={maxLength}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          aria-invalid={hasError}
-          aria-describedby={hasError ? errorId : undefined}
-          className={`${FONT} block h-11 w-full rounded-lg bg-white pl-[15px] ${padRight} text-[14px] text-[#0f172a] outline-none placeholder:text-[#94a3b8] ${
-            hasError ? "border-2 border-[#ef4444]" : "border border-[#cbd5e1] focus:border-[#0b2341]"
-          }`}
-        />
-        {hasError && showErrorIcon && !trailing && (
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#ef4444]">
-            <Icon name="alert" size={20} />
-          </span>
-        )}
-        {trailing && <span className="absolute inset-y-0 right-2 flex items-center">{trailing}</span>}
-      </div>
-      {hasError && (
-        <p id={errorId} role="alert" className={`${FONT} pt-1 text-[11px] leading-[15px] text-[#dc2626]`}>
-          {error}
-        </p>
-      )}
-    </div>
+    <h2 className="border-t border-[#e2e8f0] pt-4 text-[11.5px] leading-4 font-semibold tracking-[0.6px] text-[#0b2341] uppercase">
+      {title} <span className="text-[#ef4444]">*</span>
+    </h2>
   );
 }
 
-function SectionTitle({ title, icon, requiredNote }: { title: string; icon?: IconName; requiredNote?: boolean }) {
-  return (
-    <div className="flex w-full items-center justify-between border-b border-[#e2e8f0] pb-[5px]">
-      <h2 className={`${FONT} text-[11px] leading-4 font-semibold tracking-[0.6px] text-[#64748b] uppercase`}>
-        {title}
-        {!requiredNote && <span className="text-[#ef4444]"> *</span>}
-      </h2>
-      {requiredNote && <span className={`${FONT} text-[10px] text-[#ef4444]`}>• Required fields</span>}
-      {icon && (
-        <span className="text-[#94a3b8]">
-          <Icon name={icon} size={16} strokeWidth={1.8} />
-        </span>
-      )}
-    </div>
-  );
-}
-
-// ---------- trang ----------
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<RegistrationForm>(EMPTY_REGISTRATION);
@@ -157,11 +83,11 @@ export default function RegisterPage() {
         replace: true,
         state: { email: result.user.email, emailSent: result.verification.emailSent },
       });
-    }
-    else setErrors(result.errors);
+    } else setErrors(result.errors);
   }
 
   const field = (name: RegistrationField) => ({
+    id: name,
     name,
     value: form[name],
     error: errors[name],
@@ -172,91 +98,87 @@ export default function RegisterPage() {
     },
   });
 
-  const eyeButton = (shown: boolean, toggle: () => void, label: string) => (
+  const eye = (shown: boolean, toggle: () => void, label: string) => (
     <button
       type="button"
       onClick={toggle}
       aria-label={shown ? `Hide ${label}` : `Show ${label}`}
-      className="flex size-7 cursor-pointer items-center justify-center text-[#94a3b8]"
+      aria-pressed={shown}
+      className="flex cursor-pointer items-center text-[#64748b] hover:text-[#0b2341]"
     >
-      <Icon name={shown ? "eyeOff" : "eye"} size={16} />
+      <Icon name={shown ? "eyeOff" : "eye"} size={18} />
     </button>
   );
 
   return (
-    <MobileFrame>
-      <div className="flex min-h-[844px] flex-col bg-[#f8fafc] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]">
-        {/* Header (Figma 6:500) */}
-        <header className="flex h-[57px] items-center justify-between border-b border-[#f1f5f9] bg-white px-4">
-          <button type="button" onClick={() => navigate("/")} className={`${FONT} flex cursor-pointer items-center gap-1 text-[14px] text-[#475569]`}>
-            <Icon name="chevronLeft" size={16} />
-            Cancel
+    <AuthFrame>
+      <AuthNav
+        left={
+          <button type="button" onClick={() => navigate("/")} aria-label="Back to Welcome" className="cursor-pointer">
+            <BrandLogo className="h-8 w-auto" />
           </button>
-          <div className="flex items-center gap-1.5">
-            <img src={logo} alt="PrivateHire Cars" className="h-7 w-[54px] rounded object-cover" />
-            <h1 className={`${FONT} text-[16px] leading-6 font-bold text-[#0f172a]`}>Registration</h1>
-          </div>
-          <button type="button" onClick={() => navigate("/login")} className={`${FONT} cursor-pointer text-[14px] font-semibold text-[#0284c7]`}>
-            Login
+        }
+        center={<h1 className="text-[17px] leading-6 font-bold text-[#0b2341]">Registration</h1>}
+        right={<NavLinkButton onClick={() => navigate("/login")}>Login</NavLinkButton>}
+      />
+
+      <form noValidate onSubmit={submit} className="flex flex-col gap-4 px-5 pt-4 pb-8">
+        <AuthField {...field("fullName")} label="Full Name" autoComplete="name" placeholder="Enter full name" />
+        <AuthField
+          {...field("email")}
+          label="Email Address"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="name@example.com"
+          trailing={errors.email ? <span className="text-[#ef4444]"><Icon name="alertCircle" size={18} /></span> : undefined}
+        />
+        <AuthField {...field("homeAddress")} label="Home Address" autoComplete="street-address" placeholder="Street address, City, Postcode" />
+        <AuthField {...field("phone")} label="Phone Number" type="tel" inputMode="tel" autoComplete="tel" placeholder="+44 7XXX XXXXXX" />
+
+        <SectionTitle title="Payment information (test data only)" />
+        <AuthField {...field("cardholderName")} label="Cardholder Name" autoComplete="cc-name" placeholder="Name on card" />
+        <AuthField
+          {...field("cardNumber")}
+          label="Card Number"
+          inputMode="numeric"
+          autoComplete="cc-number"
+          placeholder="4242 **** **** 4242"
+          maxLength={23}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <AuthField {...field("expiry")} label="Expiry Date (MM/YY)" inputMode="numeric" autoComplete="cc-exp" placeholder="MM/YY" maxLength={7} center />
+          <AuthField {...field("cvv")} label="CVV / CVC" type="password" inputMode="numeric" autoComplete="cc-csc" placeholder="***" maxLength={4} center />
+        </div>
+
+        <SectionTitle title="Account security" />
+        <AuthField
+          {...field("password")}
+          label="Password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          placeholder="••••••••"
+          trailing={eye(showPassword, () => setShowPassword((v) => !v), "password")}
+        />
+        <AuthField
+          {...field("confirmPassword")}
+          label="Confirm Password"
+          type={showConfirm ? "text" : "password"}
+          autoComplete="new-password"
+          placeholder="••••••••"
+          trailing={eye(showConfirm, () => setShowConfirm((v) => !v), "confirm password")}
+        />
+
+        <PrimaryButton type="submit" disabled={submitting} className="mt-2">
+          {submitting ? "Creating account…" : "Create Account"}
+        </PrimaryButton>
+        <p className="text-center text-[14px] text-[#334155]">
+          Already have an account?{" "}
+          <button type="button" onClick={() => navigate("/login")} className="cursor-pointer font-semibold text-[#0b2341] underline underline-offset-2">
+            Go to Login
           </button>
-        </header>
-
-        <form noValidate onSubmit={submit} className="flex flex-col gap-6 px-4 pt-4 pb-8">
-          <fieldset className="flex flex-col gap-[14px]">
-            <SectionTitle title="Personal details" requiredNote />
-            <Field {...field("fullName")} label="Full Name" autoComplete="name" placeholder="Alex Morgan" />
-            <Field {...field("email")} label="Email Address" type="email" inputMode="email" autoComplete="email" placeholder="alex.morgan@example.com" showErrorIcon />
-            <Field {...field("homeAddress")} label="Home Address" autoComplete="street-address" placeholder="221B Baker St, London NW1 6XE" />
-            <Field {...field("phone")} label="Phone Number" type="tel" inputMode="tel" autoComplete="tel" placeholder="+44 7911 123456" />
-          </fieldset>
-
-          <fieldset className="flex flex-col gap-[14px]">
-            <SectionTitle title="Payment information (test data only)" icon="creditCard" />
-            <Field {...field("cardholderName")} label="Cardholder Name" autoComplete="cc-name" placeholder="Alex Morgan" />
-            <Field {...field("cardNumber")} label="Card Number" inputMode="numeric" autoComplete="cc-number" placeholder="4242 4242 4242 4242" maxLength={23} />
-            <div className="grid grid-cols-2 gap-3">
-              <Field {...field("expiry")} label="Expiry Date" inputMode="numeric" autoComplete="cc-exp" placeholder="MM/YY" maxLength={7} />
-              <Field {...field("cvv")} label="CVV / CVC" type="password" inputMode="numeric" autoComplete="cc-csc" placeholder="•••" maxLength={4} />
-            </div>
-          </fieldset>
-
-          <fieldset className="flex flex-col gap-[14px]">
-            <SectionTitle title="Account security" icon="shield" />
-            <Field
-              {...field("password")}
-              label="Password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-              trailing={eyeButton(showPassword, () => setShowPassword((v) => !v), "password")}
-            />
-            <Field
-              {...field("confirmPassword")}
-              label="Confirm Password"
-              type={showConfirm ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
-              trailing={eyeButton(showConfirm, () => setShowConfirm((v) => !v), "confirm password")}
-            />
-          </fieldset>
-
-          <div className="flex flex-col items-center gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[15px] font-medium text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] disabled:cursor-wait`}
-            >
-              Create Account <span aria-hidden="true">→</span>
-            </button>
-            <p className={`${FONT} text-[12px] text-[#64748b]`}>
-              Already have an account?{" "}
-              <button type="button" onClick={() => navigate("/login")} className="cursor-pointer font-semibold text-[#0284c7]">
-                Log In
-              </button>
-            </p>
-          </div>
-        </form>
-      </div>
-    </MobileFrame>
+        </p>
+      </form>
+    </AuthFrame>
   );
 }

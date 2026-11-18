@@ -1,89 +1,80 @@
 // =============================================================
-// RegistrationCompletePage — "Screen 3 — Registration Success" (Figma 6:773)
-// Updated for SCRUM-12 Acceptance Criteria:
-// Registration creates the account without starting an authenticated session.
-// Primary action directs the user to "Go to Login" to authenticate before Home.
+// RegistrationCompletePage — dựng theo thiết kế Sprint 1 "3. Registration Success":
+// "← Registration", logo, vòng tick cyan, tiêu đề, thẻ thông tin email + ghi chú "không tự đăng nhập",
+// nút Go to Login (primary) và "Back to Welcome".
+// Khác chữ thiết kế: email đã được xác nhận thật bằng mã OTP (P0-18), nên không ghi "simulated".
+// SCRUM-12: đăng ký không tự đăng nhập — "Go to Login" mang email sang màn Login.
 // =============================================================
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
 import Icon from "../components/Icon";
-import MobileFrame from "../components/MobileFrame";
-
-const FONT = "font-['Inter',sans-serif]";
+import { AuthFrame, BrandLogo, PrimaryButton } from "../components/auth/AuthUi";
 
 export default function RegistrationCompletePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email;
 
-  // Accessible only immediately after registration with valid email state
+  // Chỉ vào được ngay sau khi đăng ký (cần email trong state)
   if (!email) {
     return <Navigate to="/register" replace />;
   }
 
   return (
-    <MobileFrame>
-      <div
-        className="flex min-h-[844px] flex-col bg-[#f8fafc] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]"
-        data-testid="registration-complete-page"
-      >
-        <header className="flex h-[57px] items-center justify-between border-b border-[#f1f5f9] bg-white px-4">
-          <span className="w-[51px]" />
-          <div className="flex items-center gap-1.5">
-            <img src={logo} alt="PrivateHire Cars" className="h-7 w-[54px] rounded object-cover" />
-            <h1 className={`${FONT} text-[16px] leading-6 font-bold text-[#0f172a]`}>
-              Registration Complete
-            </h1>
-          </div>
-          <span className="w-[51px]" />
-        </header>
+    <AuthFrame testId="registration-complete-page">
+      <header className="flex h-14 items-center px-5">
+        <button
+          type="button"
+          onClick={() => navigate("/register", { replace: true })}
+          className="flex cursor-pointer items-center gap-2 text-[15px] font-semibold text-[#0b2341]"
+        >
+          <Icon name="arrowLeft" size={20} /> Registration
+        </button>
+      </header>
 
-        <main className="flex flex-1 flex-col justify-between px-4 pt-8 pb-4">
-          <div className="flex flex-col items-center">
-            <div className="flex size-16 items-center justify-center rounded-full border-2 border-[#05c1fa] bg-[#def7ff] text-[#05c1fa]">
-              <Icon name="check" size={32} strokeWidth={2.5} />
+      <main className="flex flex-1 flex-col px-6 pb-8">
+        <div className="flex flex-col items-center text-center">
+          <BrandLogo className="h-9 w-auto" />
+          <div className="mt-6 flex size-16 items-center justify-center rounded-full border-[3px] border-[#05c1fa] text-[#05c1fa]">
+            <Icon name="check" size={32} strokeWidth={2.75} />
+          </div>
+          <h1 className="pt-5 text-[21px] leading-8 font-bold tracking-[-0.2px] text-[#0b2341]">Account Created Successfully</h1>
+          <p className="px-2 pt-2 text-[15px] leading-6 text-[#334155]">
+            Your account has been created and your email address has been verified.
+          </p>
+
+          <div className="mt-6 w-full rounded-xl border border-[#94a3b8]/70 bg-[#f0f7ff] p-4 text-left">
+            <div className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#dbeafe] text-[#0b2341]">
+                <Icon name="mail" size={16} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13px] leading-5 font-semibold text-[#0b2341]">Email Verified</p>
+                <p data-testid="registered-email" className="truncate text-[15px] leading-5 text-[#0f172a]">
+                  {email}
+                </p>
+              </div>
             </div>
-            <h2 className={`${FONT} pt-4 text-center text-[22px] leading-8 font-bold text-[#0f172a]`}>
-              Account Created Successfully
-            </h2>
-            <p className={`${FONT} px-3 pt-2 text-center text-[15px] leading-[26px] text-[#475569]`}>
-              Your PrivateHire Cars account has been created successfully. Please log in with your credentials to continue.
+            <p className="mt-3 border-t border-[#cbd5e1] pt-3 text-[12.5px] leading-[18px] text-[#334155]">
+              <span className="font-semibold text-[#0b2341]">Note:</span> Registration does not automatically log you in. Please log in
+              with your credentials to continue.
             </p>
-
-            <div className="mt-6 w-full rounded-xl border border-[#e2e8f0] bg-white p-[17px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
-              <p className={`${FONT} flex items-center gap-2 text-[12px] font-bold tracking-[0.6px] text-[#334155] uppercase`}>
-                <span className="text-[#2563eb]"><Icon name="mail" size={16} /></span>
-                Confirmation email sent
-              </p>
-              <p data-testid="registered-email" className={`${FONT} pt-2 text-[14px] leading-5 font-semibold text-[#0f172a]`}>
-                {email}
-              </p>
-              <p className={`${FONT} pt-2 text-[11px] leading-[18px] text-[#64748b]`}>
-                Your email address has been verified with the code we sent.
-              </p>
-            </div>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-3 pt-10">
-            <button
-              type="button"
-              onClick={() => navigate("/login", { replace: true, state: { email } })}
-              data-testid="go-to-login"
-              className={`${FONT} flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[16px] font-semibold text-white hover:bg-[#3f84c4] transition-colors`}
-            >
-              Go to Login <span aria-hidden="true">→</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/", { replace: true })}
-              data-testid="back-to-welcome"
-              className={`${FONT} h-[54px] w-full cursor-pointer rounded-xl border border-[#cbd5e1] bg-white text-[16px] font-semibold text-[#0f172a] hover:bg-[#f1f5f9] transition-colors`}
-            >
-              Back to Welcome
-            </button>
-          </div>
-        </main>
-      </div>
-    </MobileFrame>
+        <div className="mt-auto flex flex-col items-center gap-4 pt-10">
+          <PrimaryButton type="button" onClick={() => navigate("/login", { replace: true, state: { email } })} data-testid="go-to-login">
+            Go to Login <Icon name="arrowRight" size={18} />
+          </PrimaryButton>
+          <button
+            type="button"
+            onClick={() => navigate("/", { replace: true })}
+            data-testid="back-to-welcome"
+            className="cursor-pointer text-[13px] font-medium text-[#334155] hover:underline"
+          >
+            Back to Welcome
+          </button>
+        </div>
+      </main>
+    </AuthFrame>
   );
 }
