@@ -4,3 +4,4 @@ selftest/
 *.log
 .env
 test-output*/
+.superpowers/

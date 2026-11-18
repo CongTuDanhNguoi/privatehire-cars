@@ -36,7 +36,8 @@
   body {
     margin: 0;
     min-width: 1280px; /* desktop-only portal (plan §8.4) */
-    background-color: var(--color-surface);
+    /* Very light blue-grey page background, mixed only from UI Kit tokens. */
+    background-color: color-mix(in srgb, var(--color-muted) 30%, var(--color-surface));
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -47,6 +48,16 @@
   :focus-visible {
     outline: 2px solid var(--color-primary-pressed);
     outline-offset: 2px;
+  }
+}
+
+/* Keep motion short, and off for people who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
   }
 }
 
