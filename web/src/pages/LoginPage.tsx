@@ -86,10 +86,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh grid-cols-2">
+    <main className="grid min-h-dvh md:grid-cols-2">
       {/* Brand panel (decorative summary of what the portal does). */}
-      <section aria-label="About the Staff Portal" className="flex flex-col justify-between bg-ink p-16 text-surface">
-        <img src={logo} alt="PrivateHire Cars" width={140} height={72} className="h-14 w-fit rounded-lg bg-surface p-1" />
+      {/* Hidden on phones: the form alone fits the screen. */}
+      <section aria-label="About the Staff Portal" className="hidden flex-col justify-between bg-ink p-12 text-surface md:flex lg:p-16">
+        <p className="text-heading font-bold">PrivateHire Cars</p>
         <div className="flex max-w-[460px] flex-col gap-8">
           <p className="text-page font-bold">Customer enquiries, answered fast.</p>
           <ul className="flex flex-col gap-4 text-body">
@@ -106,9 +107,11 @@ export default function LoginPage() {
         <p className="text-helper text-surface/70">PrivateHire Cars · Staff Portal</p>
       </section>
 
-      <div className="flex items-center justify-center bg-surface px-8 py-12">
-      <div className="w-[400px]">
+      <div className="flex items-center justify-center bg-surface px-4 py-10 sm:px-8 sm:py-12">
+      <div className="w-full max-w-[400px]">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          {/* The logo PNG has a white background: on white + multiply it shows without any frame. */}
+          <img src={logo} alt="PrivateHire Cars" width={140} height={72} className="h-16 w-auto mix-blend-multiply" />
           <h1 className="text-page font-bold text-balance text-ink">Staff Portal</h1>
           <p className="text-body text-ink">Sign in to manage customer enquiries</p>
         </div>
@@ -150,16 +153,16 @@ export default function LoginPage() {
               onChange={onPasswordChange}
               error={errors.password}
               trailing={
-                <Button
-                  variant="text"
-                  className="px-3 text-label"
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-pressed={showPassword}
                   aria-controls="password"
                   onClick={() => setShowPassword((v) => !v)}
+                  className="mr-1 grid size-9 place-items-center rounded-md text-ink/70 hover:bg-muted/60 hover:text-ink"
                 >
-                  {showPassword ? "Hide" : "Show"}
-                  <span className="visually-hidden"> password</span>
-                </Button>
+                  <Icon name={showPassword ? "eyeOff" : "eye"} size={20} />
+                </button>
               }
             />
             <Button type="submit" fullWidth loading={submitting} loadingText="Signing in…">

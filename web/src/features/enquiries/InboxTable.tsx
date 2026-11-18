@@ -20,7 +20,20 @@ const COLUMNS = [
   { label: "Replies", width: "w-[72px]" },
 ];
 
-const cell = "border-b border-muted px-3 py-3.5 align-middle";
+const cell = "border-b border-muted px-3 py-3.5 align-middle max-md:border-0 max-md:p-0";
+
+// Below md the table is shown as a list of cards (same DOM, so screen readers and tests see one table):
+// row 1 = ID · type · status, row 2 = subject, row 3 = customer, row 4 = trip · received · replies.
+const M = {
+  id: "max-md:order-1",
+  type: "max-md:order-2",
+  subject: "max-md:order-4 max-md:basis-full",
+  customer: "max-md:order-5 max-md:basis-full",
+  trip: "max-md:order-6 max-md:text-helper",
+  received: "max-md:order-7 max-md:text-helper",
+  status: "max-md:order-3 max-md:ml-auto",
+  replies: "max-md:order-8 max-md:ml-auto max-md:text-helper",
+};
 
 interface InboxTableProps {
   items: EnquirySummary[] | null;
@@ -34,16 +47,16 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
 
   return (
     <div role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto">
-      <table className="w-full table-fixed border-separate border-spacing-0 text-left" aria-busy={loading || undefined}>
+      <table className="w-full border-separate border-spacing-0 text-left max-md:block md:table-fixed" aria-busy={loading || undefined}>
         <caption id={captionId} className="visually-hidden">
           {captionText}
         </caption>
-        <colgroup>
+        <colgroup className="max-md:hidden">
           {COLUMNS.map((c) => (
             <col key={c.label} className={c.width} />
           ))}
         </colgroup>
-        <thead>
+        <thead className="max-md:sr-only">
           <tr>
             {COLUMNS.map((c) => (
               <th key={c.label} scope="col" className="border-b border-muted bg-muted/40 px-3 py-3 text-helper font-semibold text-ink uppercase">
@@ -52,10 +65,10 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="max-md:block">
           {items === null
             ? Array.from({ length: 5 }, (_, i) => (
-                <tr key={i}>
+                <tr key={i} className="max-md:flex max-md:flex-col max-md:gap-2 max-md:border-b max-md:border-muted max-md:p-4">
                   {COLUMNS.map((c) => (
                     <td key={c.label} className={cell}>
                       <Skeleton className="h-4 w-4/5" />
@@ -71,9 +84,9 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
                     if ((ev.target as HTMLElement).closest("a")) return;
                     navigate(`/enquiries/${e.id}`);
                   }}
-                  className="cursor-pointer transition-colors duration-150 hover:bg-muted/40"
+                  className="cursor-pointer transition-colors duration-150 hover:bg-muted/40 max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3 max-md:gap-y-2 max-md:border-b max-md:border-muted max-md:p-4"
                 >
-                  <td className={`${cell} text-label font-semibold tabular-nums`}>
+                  <td className={`${cell} ${M.id} text-label font-semibold tabular-nums`}>
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       <span
                         aria-hidden="true"
@@ -82,10 +95,10 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
                       {e.code}
                     </span>
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} ${M.type}`}>
                     <TypeBadge type={e.type} />
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} ${M.subject}`}>
                     <Link
                       to={`/enquiries/${e.id}`}
                       className="block truncate rounded text-body font-semibold text-ink hover:underline"
@@ -93,7 +106,7 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
                       {e.subject}
                     </Link>
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} ${M.customer}`}>
                     <span className="flex min-w-0 items-center gap-2.5">
                       <Avatar name={e.customer.fullName} />
                       <span className="min-w-0">
@@ -102,15 +115,16 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
                       </span>
                     </span>
                   </td>
-                  <td className={`${cell} text-label tabular-nums`}>{e.bookingRef ?? "—"}</td>
-                  <td className={`${cell} text-label tabular-nums`}>
+                  <td className={`${cell} ${M.trip} text-label tabular-nums`}>{e.bookingRef ?? "—"}</td>
+                  <td className={`${cell} ${M.received} text-label tabular-nums`}>
                     <time dateTime={isoDateTime(e.createdAt)}>{formatDateTime(e.createdAt)}</time>
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} ${M.status}`}>
                     <StatusBadge status={e.status} />
                   </td>
-                  <td className={`${cell} text-label tabular-nums`}>
+                  <td className={`${cell} ${M.replies} text-label tabular-nums`}>
                     <span className="inline-flex items-center gap-1.5">
+                      <span className="md:hidden">Replies:</span>
                       {e.responseCount}
                       {e.lastResponseStatus === "FAILED" && (
                         <Icon name="alert" size={16} className="text-error" label="Last reply failed to send" />

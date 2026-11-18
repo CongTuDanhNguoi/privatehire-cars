@@ -35,7 +35,7 @@ const CARDS: CardDef[] = [
 
 export function StatCards({ counts, type, status, onPick }: StatCardsProps) {
   return (
-    <ul aria-label="Summary" className="grid grid-cols-4 gap-4">
+    <ul aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       {CARDS.map((card) => {
         const active = card.change.status ? status === card.change.status : type === card.change.type;
         return (
@@ -45,7 +45,7 @@ export function StatCards({ counts, type, status, onPick }: StatCardsProps) {
               aria-pressed={active}
               onClick={() => onPick(card.change)}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-4 rounded-xl border bg-surface p-5 text-left shadow-sm transition-[border-color,box-shadow] duration-150 hover:shadow-md",
+                "flex w-full cursor-pointer items-center gap-3 rounded-xl border bg-surface p-4 text-left shadow-sm sm:gap-4 sm:p-5 transition-[border-color,box-shadow] duration-150 hover:shadow-md",
                 active ? "border-primary-pressed" : "border-muted",
               )}
             >

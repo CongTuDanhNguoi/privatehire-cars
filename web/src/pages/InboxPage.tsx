@@ -89,7 +89,7 @@ export default function InboxPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-page font-bold text-balance text-ink">Enquiries</h1>
           <p className="text-body text-ink">
@@ -105,7 +105,7 @@ export default function InboxPage() {
       <StatCards counts={counts} type={query.type} status={query.status} onPick={(changes) => update(changes)} />
 
       <section aria-label="Enquiry list" className="overflow-hidden rounded-xl border border-muted bg-surface shadow-sm">
-      <search className="flex flex-wrap items-end gap-4 border-b border-muted p-4">
+      <search className="flex flex-wrap items-end gap-4 border-b border-muted p-4 max-sm:[&>*]:w-full">
         <Segmented
           legend="Type"
           value={query.type}
@@ -116,14 +116,14 @@ export default function InboxPage() {
             { value: "TRIP", label: `Trip-specific${count(counts?.trip)}` },
           ]}
         />
-        <div className="w-44">
+        <div className="w-44 max-sm:w-full">
           <Select label="Status" value={query.status} onChange={(e) => update({ status: e.target.value as InboxQuery["status"] })}>
             <option value="ALL">All</option>
             <option value="AWAITING">Awaiting</option>
             <option value="RESOLVED">Resolved</option>
           </Select>
         </div>
-        <div className="min-w-60 flex-1">
+        <div className="min-w-0 flex-1 sm:min-w-60">
           <TextField
             label="Search"
             type="search"
@@ -136,7 +136,7 @@ export default function InboxPage() {
             maxLength={100}
           />
         </div>
-        <div className="w-40">
+        <div className="w-40 max-sm:w-full">
           <Select label="Sort" value={query.sort} onChange={(e) => update({ sort: e.target.value as InboxQuery["sort"] })}>
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -172,7 +172,7 @@ export default function InboxPage() {
             }${data ? `, ${data.total} results` : ""}`}
           />
           {data && data.total > 0 && (
-            <nav aria-label="Pagination" className="flex items-center justify-between gap-4 px-4 py-3">
+            <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
               <p className="text-label text-ink">
                 Showing {firstItem}–{lastItem} of {data.total}
               </p>
