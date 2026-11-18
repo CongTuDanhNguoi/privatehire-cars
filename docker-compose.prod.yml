@@ -1,6 +1,6 @@
 # Production stack on this machine (separate from the dev stack in docker-compose.yml; both can run together).
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-#   Public links: docker compose -f docker-compose.prod.yml logs tunnel-app tunnel-staff | findstr trycloudflare
+#   Public links (fixed): https://gocnhocuabao.id.vn (app) · https://staff.gocnhocuabao.id.vn (Staff Portal)
 name: privatehire-prod
 
 services:
@@ -42,17 +42,14 @@ services:
       - "8081:8081" # Staff Portal  → http://localhost:8081
     depends_on: [backend]
 
-  # Cloudflare Quick Tunnels: random https://*.trycloudflare.com links (change on every restart).
-  tunnel-app:
+  # Named Cloudflare Tunnel — fixed links: https://gocnhocuabao.id.vn (app), https://staff.gocnhocuabao.id.vn (Staff Portal).
+  # Needs deploy/cloudflared/credentials.json (git-ignored; from `cloudflared tunnel create privatehire`).
+  tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://web:8080
-    depends_on: [web]
-
-  tunnel-staff:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://web:8081
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./deploy/cloudflared:/etc/cloudflared:ro
     depends_on: [web]
 
 volumes:

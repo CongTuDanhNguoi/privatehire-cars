@@ -6,3 +6,4 @@ selftest/
 test-output*/
 .superpowers/
 .env.prod
+deploy/cloudflared/credentials.json

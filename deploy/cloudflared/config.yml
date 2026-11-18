@@ -1,0 +1,11 @@
+# Named Cloudflare Tunnel "privatehire" — fixed public hostnames for the production stack.
+# credentials.json (same folder) is the tunnel secret: git-ignored, never commit it.
+tunnel: abc9204c-f95a-4852-b21b-f6d06b5dcef0
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: gocnhocuabao.id.vn # customer app
+    service: http://web:8080
+  - hostname: staff.gocnhocuabao.id.vn # Staff Portal
+    service: http://web:8081
+  - service: http_status:404
