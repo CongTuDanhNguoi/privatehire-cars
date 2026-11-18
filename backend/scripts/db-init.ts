@@ -64,7 +64,7 @@ try {
     await conn.beginTransaction();
     await seedDatabase(conn);
     await conn.commit();
-    console.log(`Database "${name}" created and seeded with demo data.`);
+    console.log(`Database "${name}" created (Admin account only, no mock data).`);
   }
 } catch (err) {
   console.error("db:init failed:", err instanceof Error ? err.message : err);

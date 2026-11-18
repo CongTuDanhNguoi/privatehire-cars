@@ -22,6 +22,25 @@ const page = await context.newPage();
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(e.message));
 
+// Test data: the database no longer ships mock customers, so make sure the demo account exists (created through the
+// real register API + email-verification code; @example.com codes are readable via /api/dev outside production).
+{
+  const DEMO = {
+    fullName: "Alex Morgan", email: "alex.morgan@example.com", homeAddress: "221B Baker St, London NW1 6XE",
+    phone: "+44 7911 123456", cardholderName: "Alex Morgan", cardNumber: "4242 4242 4242 4242", expiry: "12/30",
+    cvv: "123", password: "Password123", confirmPassword: "Password123",
+  };
+  const reg = await page.request.post(`${BASE}/api/customer/auth/register`, { data: DEMO });
+  if (reg.status() === 201) {
+    const codeRes = await page.request.get(`${BASE}/api/dev/last-verification-code?email=${encodeURIComponent(DEMO.email)}`);
+    const { code } = await codeRes.json();
+    const ver = await page.request.post(`${BASE}/api/customer/auth/verify-email`, { data: { email: DEMO.email, code } });
+    if (!ver.ok()) throw new Error(`Could not verify the demo account (HTTP ${ver.status()})`);
+  } else if (reg.status() !== 409) {
+    throw new Error(`Could not create the demo account (HTTP ${reg.status()}): ${await reg.text()}`);
+  }
+}
+
 const results = [];
 let shot = 0;
 const snap = async (label) => {

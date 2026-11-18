@@ -81,7 +81,7 @@ function client() {
 
 // ---------- run ----------
 console.log("Resetting database...");
-const reset = spawnSync(process.execPath, ["--import", "tsx", "scripts/db-reset.ts"], { cwd: BE_ROOT, encoding: "utf8" });
+const reset = spawnSync(process.execPath, ["--import", "tsx", "scripts/db-reset.ts", "--demo"], { cwd: BE_ROOT, encoding: "utf8" });
 if (reset.status !== 0) {
   console.error(reset.stdout, reset.stderr);
   process.exit(1);
@@ -327,5 +327,5 @@ try {
 }
 
 console.log(`\n${passed}/${passed + failed} PASS`);
-console.log("Note: the database now contains test data — run `npm run db:reset` before a demo.");
+console.log("Note: the database now contains test data — run `npm run db:reset` (empty) or `npm run db:reset -- --demo` (mock data) afterwards.");
 process.exit(failed ? 1 : 0);

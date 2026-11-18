@@ -7,7 +7,7 @@
 //        EMAIL_PROVIDER=MOCK
 //        MOCK_EMAIL_FAIL=next
 //      then: docker compose up -d --force-recreate backend
-//   3. Fresh demo data: docker compose exec backend npm run db:reset
+//   3. Fresh mock demo data (the default database has none): docker compose exec backend npm run db:reset -- --demo
 //   4. Once: npx playwright install chromium
 // Run:  cd web && npm run selftest
 // Result: web/selftest/ — screenshots + report.html

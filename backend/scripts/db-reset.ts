@@ -1,5 +1,6 @@
-// npm run db:reset
-// Drops and recreates the database, applies sql/001_schema.sql, seeds demo data, then prints row counts.
+// npm run db:reset            → empty database with only the Admin staff account
+// npm run db:reset -- --demo  → also the mock demo data used by the automated tests
+// Drops and recreates the database, applies sql/001_schema.sql, seeds, then prints row counts.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { RowDataPacket } from "mysql2/promise";
@@ -28,9 +29,10 @@ try {
   console.log("Schema applied.");
 
   await conn.beginTransaction();
-  await seedDatabase(conn);
+  const demo = process.argv.includes("--demo");
+  await seedDatabase(conn, { demo });
   await conn.commit();
-  console.log("Seed complete.\n");
+  console.log(demo ? "Seed complete (Admin + mock demo data).\n" : "Seed complete (Admin only, no mock data).\n");
 
   for (const table of TABLES) {
     const [rows] = await conn.query<RowDataPacket[]>(`SELECT COUNT(*) AS n FROM \`${table}\``);

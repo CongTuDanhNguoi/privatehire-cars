@@ -1,6 +1,8 @@
-// Seeds demo data: 2 staff, 3 customers, 4 bookings, 7 enquiries, 3 responses (1 FAILED).
+// Seeds the database. By default ONLY the Admin staff account (no mock customers / bookings / enquiries).
+// With { demo: true } (`npm run db:reset -- --demo`) it also adds the mock data the automated tests and demos use:
+// 3 customers, 4 bookings, 7 enquiries, 3 responses (1 FAILED).
 // Passwords are hashed with bcrypt (cost 10) at run time — no plain-text passwords in SQL.
-// Usually run through `npm run db:reset`; can also run alone on an empty schema: `npx tsx scripts/seed.ts`.
+// Can also run alone on an empty schema: `npx tsx scripts/seed.ts [--demo]`.
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import bcrypt from "bcryptjs";
@@ -98,7 +100,7 @@ const ENQUIRIES: SeedEnquiry[] = [
 
 const enquiryCode = (id: number) => `ENQ-${String(id).padStart(6, "0")}`;
 
-export async function seedDatabase(conn: Connection): Promise<void> {
+export async function seedDatabase(conn: Connection, { demo = false }: { demo?: boolean } = {}): Promise<void> {
   const now = Date.now();
 
   const staffIds: number[] = [];
@@ -110,6 +112,7 @@ export async function seedDatabase(conn: Connection): Promise<void> {
     );
     staffIds.push(r.insertId);
   }
+  if (!demo) return; // real use: start empty, only the Admin account
 
   const customerIds = new Map<CustomerKey, { id: number; email: string }>();
   for (const c of CUSTOMERS) {
@@ -180,7 +183,7 @@ export async function seedDatabase(conn: Connection): Promise<void> {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const conn = await connect({ database: dbName() });
   try {
-    await seedDatabase(conn);
+    await seedDatabase(conn, { demo: process.argv.includes("--demo") });
     console.log("Seed complete.");
   } finally {
     await conn.end();

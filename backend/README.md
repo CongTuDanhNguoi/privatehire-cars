@@ -26,12 +26,15 @@ Tạo `JWT_SECRET` ngẫu nhiên: `node -e "console.log(require('crypto').random
 | `npm run dev` | Chạy server, tự tải lại khi sửa code |
 | `npm start` | Chạy server (không theo dõi file) |
 | `npm run typecheck` / `npm run build` | Kiểm tra kiểu TypeScript (server chạy trực tiếp bằng `tsx`, không xuất file JS) |
-| `npm run db:reset` | **Xoá sạch** database rồi tạo lại + seed (dùng trước mỗi buổi demo) |
+| `npm run db:reset` | **Xoá sạch** database rồi tạo lại, chỉ có Admin. `npm run db:reset -- --demo`: thêm dữ liệu mẫu |
 | `npm run smoke` | Kiểm thử API tự động (47 bước). **Tự reset DB**, tự bật server riêng ở cổng 4100 với Mock email. Chạy xong nên `db:reset` lại |
 
 `.env` không được commit. Server **không khởi động** nếu cấu hình sai (ví dụ `JWT_SECRET` còn giá trị mẫu) và không bao giờ in giá trị bí mật ra log.
 
-## 2. Tài khoản mẫu (sau `db:reset`)
+## 2. Tài khoản mẫu
+
+`db:reset` / `db:init` chỉ tạo **Admin**. Các tài khoản khách bên dưới (và chuyến, enquiry mẫu) chỉ có sau
+`npm run db:reset -- --demo` (smoke test tự dùng `--demo`).
 
 | Loại | Email | Mật khẩu |
 |---|---|---|

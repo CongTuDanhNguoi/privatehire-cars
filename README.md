@@ -80,14 +80,14 @@ Lần đầu mất vài phút (tải image + cài thư viện). Sau đó mở:
 | <http://localhost:4000/api/health> | Kiểm tra backend + database (`{"status":"ok","database":"up"}`) |
 | `localhost:3307` | MySQL (user `root`, mật khẩu `privatehire`) — cổng 3307 để không đụng MySQL cài trên máy |
 
-Database được **tự tạo + nạp dữ liệu mẫu** ở lần chạy đầu (`db:init`), các lần sau giữ nguyên dữ liệu.
+Database được **tự tạo (chỉ có tài khoản Admin, không có dữ liệu mẫu)** ở lần chạy đầu (`db:init`), các lần sau giữ nguyên dữ liệu.
 
 | Lệnh | Tác dụng |
 |---|---|
 | `docker compose up -d` | Bật cả hệ thống |
 | `docker compose ps` | Xem trạng thái 4 container (`db`, `backend`, `web`, `app`) |
 | `docker compose logs -f backend` | Xem log backend (email Mock được in ở đây) |
-| `docker compose exec backend npm run db:reset` | **Xoá sạch** dữ liệu rồi nạp lại dữ liệu mẫu — chạy trước mỗi buổi demo |
+| `docker compose exec backend npm run db:reset` | **Xoá sạch** dữ liệu, chỉ để lại tài khoản Admin (thêm `-- --demo` để nạp dữ liệu mẫu) — chạy trước mỗi buổi demo |
 | `docker compose up -d --force-recreate backend` | Khởi động lại backend sau khi sửa `backend/.env` |
 | `docker compose down` | Tắt (dữ liệu vẫn giữ) |
 | `docker compose down -v` | Tắt **và xoá** database + thư viện đã cài |
@@ -120,16 +120,19 @@ npm run dev                 # http://localhost:5174
 
 ## 4. Tài khoản demo và dữ liệu mẫu
 
+**Mặc định database trống**: chỉ có tài khoản Admin (cả bản dev lẫn bản deploy). Khách hàng tự đăng ký trên app (có OTP).
+Dữ liệu mẫu bên dưới (khách, chuyến, enquiry) **chỉ có khi chạy** `docker compose exec backend npm run db:reset -- --demo`
+— dùng cho test Staff Portal / buổi demo. Test app (`npm run selftest`) tự tạo tài khoản Alex qua API nếu chưa có.
 Mật khẩu được băm bcrypt khi nạp dữ liệu, không lưu dạng thô.
 
 | Loại | Email | Mật khẩu | Dùng ở |
 |---|---|---|---|
 | Nhân viên (Admin) | `admin@gmail.com` | `123456` | Staff Portal — tài khoản nhân viên duy nhất |
-| Khách | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
+| Khách *(chỉ với `--demo`)* | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
 | Khách | `emily.clarke@example.com` | `Password123` | App Customer (chuyến PHC-24053) |
 | Khách | `daniel.brooks@example.com` | `Password123` | App Customer (chuyến PHC-24054) |
 
-Dữ liệu mẫu có **7 enquiry** (General + Trip, Awaiting + Resolved) và **3 phản hồi**, trong đó 1 phản hồi **Failed**
+Dữ liệu mẫu (`--demo`) có **7 enquiry** (General + Trip, Awaiting + Resolved) và **3 phản hồi**, trong đó 1 phản hồi **Failed**
 (ENQ-000001) để demo nút **Retry**. Staff Portal không có trang đăng ký nhân viên (theo kế hoạch: tài khoản seed sẵn).
 
 **Dữ liệu hợp lệ để điền nhanh form Đăng ký** (dữ liệu test, không phải thẻ thật):
