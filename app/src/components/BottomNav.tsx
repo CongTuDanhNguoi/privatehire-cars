@@ -1,22 +1,23 @@
-// Thanh điều hướng dưới (Home / Activity / Alerts / Profile)
-// Kiểu dáng lấy từ BottomNavigation (Figma node 6:1029) của màn Home.
+// Thanh điều hướng dưới (Home / Activity / Alerts / Profile) — kiểu thiết kế Sprint 1:
+// icon 22px, nhãn 12px, mục đang mở màu xanh #0b5cad, nền trắng mờ.
+// Giữ data-testid tab-* và data-node-id 6:1030 / 6:1051 (self-test bấm theo chúng).
 import { useNavigate } from "react-router-dom";
 import Icon, { type IconName } from "./Icon";
 
 type Tab = "home" | "activity" | "alerts" | "profile";
 
-const TABS: { id: Tab; label: string; icon: IconName; to?: string }[] = [
-  { id: "home", label: "Home", icon: "house", to: "/home" },
-  { id: "activity", label: "Activity", icon: "clipboard" },
+const TABS: { id: Tab; label: string; icon: IconName; to?: string; nodeId?: string }[] = [
+  { id: "home", label: "Home", icon: "house", to: "/home", nodeId: "6:1030" },
+  { id: "activity", label: "Activity", icon: "clock" },
   { id: "alerts", label: "Alerts", icon: "bell" },
-  { id: "profile", label: "Profile", icon: "user", to: "/profile" },
+  { id: "profile", label: "Profile", icon: "userCircle", to: "/profile", nodeId: "6:1051" },
 ];
 
 export default function BottomNav({ active }: { active: Tab }) {
   const navigate = useNavigate();
   return (
-    <nav className="absolute right-0 bottom-0 left-0 z-10 border-t border-[rgba(226,232,240,0.9)] bg-[rgba(255,255,255,0.95)] px-6 pt-[11px] pb-[10px] backdrop-blur-[12px]">
-      <ul className="flex items-center justify-between">
+    <nav className="absolute right-0 bottom-0 left-0 z-10 border-t border-[#e2e8f0] bg-white/95 px-4 pt-2.5 pb-3 backdrop-blur-md">
+      <ul className="flex items-center justify-around">
         {TABS.map((tab) => {
           const isActive = tab.id === active;
           return (
@@ -24,15 +25,14 @@ export default function BottomNav({ active }: { active: Tab }) {
               <button
                 type="button"
                 data-testid={`tab-${tab.id}`}
+                data-node-id={tab.nodeId}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => tab.to && navigate(tab.to)}
-                className={`flex w-14 cursor-pointer flex-col items-center font-['Liberation_Sans',Arial,sans-serif] text-[10px] leading-[15px] tracking-[-0.25px] ${
-                  isActive ? "font-bold text-[#2563eb]" : "text-[#94a3b8]"
-                } ${tab.to ? "" : "cursor-default"}`}
+                className={`flex w-16 flex-col items-center gap-1 font-['Inter',sans-serif] text-[12px] leading-4 ${
+                  isActive ? "font-medium text-[#0b5cad]" : "text-[#334155]"
+                } ${tab.to ? "cursor-pointer" : "cursor-default"}`}
               >
-                <span className="pb-1">
-                  <Icon name={tab.icon} size={20} strokeWidth={isActive ? 2.2 : 1.8} />
-                </span>
+                <Icon name={tab.icon} size={22} strokeWidth={isActive ? 2.1 : 1.8} />
                 {tab.label}
               </button>
             </li>

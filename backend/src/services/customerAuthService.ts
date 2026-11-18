@@ -12,6 +12,8 @@ import { hashPassword, verifyPassword } from "./passwords.js";
 export interface CustomerUser {
   email: string;
   fullName: string;
+  phone?: string; // shown on My Profile
+  cardLast4?: string; // only the last 4 digits are ever stored
 }
 
 interface CustomerRow extends RowDataPacket {
@@ -20,7 +22,16 @@ interface CustomerRow extends RowDataPacket {
   email: string;
   password_hash: string;
   email_verified_at: Date | null;
+  phone: string | null;
+  card_last4: string | null;
 }
+
+const profileOf = (row: CustomerRow): CustomerUser => ({
+  email: row.email,
+  fullName: row.full_name,
+  ...(row.phone ? { phone: row.phone } : {}),
+  ...(row.card_last4 ? { cardLast4: row.card_last4 } : {}),
+});
 
 export async function isCustomerEmailRegistered(rawEmail: string): Promise<boolean> {
   const email = normalizeEmail(rawEmail);
@@ -70,7 +81,7 @@ export async function authenticateCustomer(body: LoginBody): Promise<{ id: numbe
 
   const email = normalizeEmail(body.email);
   const [rows] = await pool.execute<CustomerRow[]>(
-    "SELECT id, full_name, email, password_hash, email_verified_at FROM customers WHERE email = ?",
+    "SELECT id, full_name, email, password_hash, email_verified_at, phone, card_last4 FROM customers WHERE email = ?",
     [email],
   );
   const row = rows[0];
@@ -88,11 +99,11 @@ export async function authenticateCustomer(body: LoginBody): Promise<{ id: numbe
   if (!row.email_verified_at) {
     throw new AppError("EMAIL_NOT_VERIFIED", OTP_MESSAGES.verifyFirst, { email: row.email });
   }
-  return { id: row.id, user: { email: row.email, fullName: row.full_name } };
+  return { id: row.id, user: profileOf(row) };
 }
 
 export async function findCustomerUser(id: number): Promise<CustomerUser | null> {
-  const [rows] = await pool.execute<CustomerRow[]>("SELECT full_name, email FROM customers WHERE id = ?", [id]);
+  const [rows] = await pool.execute<CustomerRow[]>("SELECT full_name, email, phone, card_last4 FROM customers WHERE id = ?", [id]);
   const row = rows[0];
-  return row ? { email: row.email, fullName: row.full_name } : null;
+  return row ? profileOf(row) : null;
 }

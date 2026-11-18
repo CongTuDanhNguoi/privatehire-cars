@@ -299,7 +299,7 @@ export default function Screen1JourneyDetailsCompleted() {
                 </div>
               </div>
               <div className="content-stretch flex flex-col items-center pt-[40px] relative shrink-0 w-full" data-node-id="6:1612" data-name="Complimentary Wait Time Benefit">
-                <div className="bg-[#0b2341] content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[8px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:1613" data-name="Button">
+                <div className="bg-[#65b3fc] content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[8px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:1613" data-name="Button">
                   <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="6:1614" data-name="Container">
                     <div className="[word-break:break-word] flex flex-col font-['Inter',sans-serif] font-bold justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-center text-white whitespace-nowrap" data-node-id="6:1615">
                       <p className="leading-[20px]">Continue to Vehicle Selection</p>

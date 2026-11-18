@@ -157,13 +157,13 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
     <div className="flex flex-col gap-6">
       <BackLink />
 
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-wrap items-start justify-between gap-4 md:gap-6">
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex items-center gap-3">
             <span className="text-label font-semibold tabular-nums text-ink">{enquiry.code}</span>
             <TypeBadge type={enquiry.type} />
           </div>
-          <h1 className="text-page font-bold break-words text-ink">{enquiry.subject}</h1>
+          <h1 className="text-page font-bold text-balance break-words text-ink">{enquiry.subject}</h1>
           <p className="text-helper text-ink">
             Received <time dateTime={isoDateTime(enquiry.createdAt)}>{formatDateTime(enquiry.createdAt)}</time>
           </p>
@@ -190,8 +190,8 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
 
       {/* Left (8/12): the conversation — question, replies, reply box. Right (4/12): reference info.
           The left column comes first in the DOM so the response list is the first <ol> on the page. */}
-      <div className="grid grid-cols-12 items-start gap-6">
-        <div className="col-span-8 flex min-w-0 flex-col gap-6">
+      <div className="grid grid-cols-1 items-start gap-4 md:gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 md:gap-6 lg:col-span-8">
           <EnquiryCard message={enquiry.message} createdAt={enquiry.createdAt} customerName={detail.customer.fullName} />
           <ResponseHistory responses={detail.responses} retryingId={retryingId} onRetry={(rid) => void retry(rid)} />
           <ReplyComposer
@@ -206,7 +206,7 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
             retry={retry}
           />
         </div>
-        <div className="col-span-4 flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-4 md:gap-6 lg:col-span-4">
           <CustomerCard customer={detail.customer} />
           {enquiry.type === "TRIP" && detail.booking && <TripCard booking={detail.booking} />}
           <StatusHistory items={detail.statusHistory} />

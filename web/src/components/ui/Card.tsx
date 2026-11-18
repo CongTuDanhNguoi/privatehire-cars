@@ -19,7 +19,7 @@ export function Card({ title, actions, children, className }: CardProps) {
       {(title || actions) && (
         <div className="mb-4 flex items-center justify-between gap-4">
           {title && (
-            <h2 id={headingId} className="text-heading font-bold text-ink">
+            <h2 id={headingId} className="text-heading font-bold text-balance text-ink">
               {title}
             </h2>
           )}

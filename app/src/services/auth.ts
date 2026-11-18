@@ -20,6 +20,8 @@ export interface SessionUser {
   email: string;
   fullName: string;
   loggedInAt: string;
+  phone?: string; // có khi server trả về (My Profile)
+  cardLast4?: string; // chỉ 4 số cuối thẻ
 }
 
 export type LoginResult =

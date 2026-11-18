@@ -1,45 +1,89 @@
 // =============================================================
-// VehicleSizePage.tsx — SCRUM-17 Vehicle Size Selection
-// Pixel-perfect implementation matching approved Figma PNG reference designs:
-// - Screen 1 — Vehicle Size Selection.png (430x926) -> State A
-// - Screen 1A — Insufficient Capacity.png (430x926) -> State B
-// - Screen 1B — Corrected Selection.png (430x926) -> State C
-// Full business logic:
-// - Passenger count: 1–6 (excludes driver)
-// - Standard Car: max 4 passengers
-// - Seven-Seater: max 6 passengers
-// - Single selection only
-// - Insufficient capacity disables vehicle with warning text & badge
-// - Automatic clearing of invalid selection on count increase
-// - No auto-selection of replacement vehicle
-// - Check Vehicle Availability disabled when no valid vehicle selected
-// - State preserved in BookingContext across back navigation
+// VehicleSizePage — SCRUM-17 Vehicle Size Selection, dựng theo thiết kế Sprint 1:
+//   "1. Vehicle Size Selection (Normal State)"  — ≤ 4 khách: thẻ gọn (ảnh nhỏ, giá, tiện ích)
+//   "1. Insufficient Capacity State"            — 5–6 khách: banner "Capacity mismatch", thẻ ảnh lớn,
+//                                                 Standard Car bị khoá "Unavailable"
+// Logic giữ nguyên: 1–6 khách; Standard tối đa 4, Seven-Seater tối đa 6; chỉ chọn 1;
+// vượt sức chứa thì bỏ chọn và không tự chọn xe khác; nút Check Vehicle Availability tắt khi chưa có xe hợp lệ.
+// Giữ mọi data-testid mà test-scrum17 / scrum18 / final-acceptance dùng.
 // =============================================================
-import { useState, useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import Icon from "../components/Icon";
+import standardPhoto from "../assets/car-standard-photo.png";
+import standardThumb from "../assets/car-standard-thumb.png";
+import vanPhoto from "../assets/car-van-photo.png";
+import vanThumb from "../assets/car-van-thumb.png";
+import AppBar from "../components/AppBar";
+import Icon, { type IconName } from "../components/Icon";
 import MobileFrame from "../components/MobileFrame";
 import { useBooking } from "../context/BookingContext";
 
-const assetPathPrefix = "/figma-assets/f153e3e9-bbdf-462d-ad24-7bc6b21b7269";
-const imgStandardSaloonFleet = `${assetPathPrefix}/fe2e0.png`;
-const imgExecutiveVanMpvFleet = `${assetPathPrefix}/9e353.png`;
-const imgSvg = `${assetPathPrefix}/b9500.svg`; // Back chevron
-const imgBackground = `${assetPathPrefix}/64d4a.svg`; // Step 1 check
-const imgSvg1 = `${assetPathPrefix}/53610.svg`; // Minus icon
-const imgSvg2 = `${assetPathPrefix}/68749.svg`; // Passenger display icon
-const imgSvg3 = `${assetPathPrefix}/34cb3.svg`; // Plus icon
-const imgSvg4 = `${assetPathPrefix}/83fc0.svg`; // Passenger badge icon
-const imgSvg5 = `${assetPathPrefix}/78dce.svg`; // Luggage badge icon
-const imgSvg6 = `${assetPathPrefix}/e7f30.svg`; // Checked badge icon
-const imgSvg7 = `${assetPathPrefix}/54330.svg`; // Passenger badge icon (selected)
-const imgSvg8 = `${assetPathPrefix}/ee53f.svg`; // Luggage badge icon (selected)
-const imgSvg9 = `${assetPathPrefix}/505ba.svg`; // Checkmark icon
-const imgSvg10 = `${assetPathPrefix}/b971a.svg`; // CTA Arrow icon
-
 const FONT = "font-['Inter',sans-serif]";
+const STANDARD_MAX = 4;
+const SEVEN_SEATER_MAX = 6;
 
 export type VehicleTypeId = "standard" | "seven-seater";
+
+interface VehicleInfo {
+  id: VehicleTypeId;
+  testKey: "standard" | "seven-seater";
+  name: string;
+  tag: string;
+  model: string;
+  max: number;
+  bags: number;
+  price: string;
+  thumb: string;
+  photo: string;
+  extra: { icon: IconName; label: string };
+  footnote: { icon: IconName; label: string };
+}
+
+const VEHICLES: VehicleInfo[] = [
+  {
+    id: "standard",
+    testKey: "standard",
+    name: "Standard Car",
+    tag: "Saloon",
+    model: "Mercedes E-Class",
+    max: STANDARD_MAX,
+    bags: 2,
+    price: "£4.00",
+    thumb: standardThumb,
+    photo: standardPhoto,
+    extra: { icon: "snowflake", label: "A/C" },
+    footnote: { icon: "badgeCheck", label: "Economical & reliable" },
+  },
+  {
+    id: "seven-seater",
+    testKey: "seven-seater",
+    name: "Seven-Seater",
+    tag: "Spacious MPV",
+    model: "Mercedes-Benz V-Class",
+    max: SEVEN_SEATER_MAX,
+    bags: 4,
+    price: "£6.00",
+    thumb: vanThumb,
+    photo: vanPhoto,
+    extra: { icon: "wifi", label: "Free Wi-Fi" },
+    footnote: { icon: "thumbsUp", label: "Recommended for groups & extra luggage" },
+  },
+];
+
+function Radio({ selected, disabled, testKey }: { selected: boolean; disabled: boolean; testKey: string }) {
+  if (disabled) return <span data-testid={`${testKey}-disabled-radio`} className="size-6 rounded-full bg-[#f1d4d4]" aria-hidden="true" />;
+  if (selected)
+    return (
+      <span data-testid={`${testKey}-selected-indicator`} className="flex size-6 items-center justify-center rounded-full bg-[#22b8ef] text-[#0b2341]" aria-hidden="true">
+        <Icon name="check" size={14} strokeWidth={3} />
+      </span>
+    );
+  return <span data-testid={`${testKey}-unselected-indicator`} className="size-6 rounded-full bg-[#dbe7f7]" aria-hidden="true" />;
+}
+
+function Pill({ children, className }: { children: ReactNode; className: string }) {
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${className}`}>{children}</span>;
+}
 
 export default function VehicleSizePage() {
   const navigate = useNavigate();
@@ -54,39 +98,18 @@ export default function VehicleSizePage() {
     setVehicleSelection,
   } = useBooking();
 
-  // Route Guard: Must have active service and journey details
-  if (!selectedService) {
-    return <Navigate to="/services" replace />;
-  }
-  if (!pickupLocation || !destination || !journeyDate || !journeyTime) {
-    return <Navigate to="/journey" replace />;
-  }
-
-  // Initial passenger count (defaults to 3 per Figma State A if not previously set)
-  const [passengers, setPassengers] = useState<number>(() => {
-    return typeof storedPassengers === "number" && storedPassengers >= 1 && storedPassengers <= 6
-      ? storedPassengers
-      : 3;
-  });
-
-  // Initial selected vehicle (defaults to "seven-seater" per Figma State A if not previously set)
+  // Số khách ban đầu: giá trị đã lưu, mặc định 3 (thiết kế)
+  const [passengers, setPassengers] = useState<number>(() =>
+    typeof storedPassengers === "number" && storedPassengers >= 1 && storedPassengers <= 6 ? storedPassengers : 3,
+  );
+  // Xe ban đầu: giá trị đã lưu (nếu còn đủ chỗ), mặc định Seven-Seater (thiết kế)
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleTypeId | null>(() => {
-    if (storedVehicleSize === "standard") {
-      return (storedPassengers ?? 3) <= 4 ? "standard" : null;
-    }
-    if (storedVehicleSize === "seven-seater") {
-      return (storedPassengers ?? 3) <= 6 ? "seven-seater" : null;
-    }
+    if (storedVehicleSize === "standard") return (storedPassengers ?? 3) <= STANDARD_MAX ? "standard" : null;
+    if (storedVehicleSize === "seven-seater") return (storedPassengers ?? 3) <= SEVEN_SEATER_MAX ? "seven-seater" : null;
     return "seven-seater";
   });
 
-  const STANDARD_MAX = 4;
-  const SEVEN_SEATER_MAX = 6;
-  const isStandardEligible = passengers <= STANDARD_MAX;
-  const isSevenSeaterEligible = passengers <= SEVEN_SEATER_MAX;
-
-  // Clear invalid selection when passenger count exceeds capacity
-  // "Do not automatically select a replacement vehicle."
+  // Vượt sức chứa thì bỏ chọn — không tự chọn xe khác
   useEffect(() => {
     if (selectedVehicle === "standard" && passengers > STANDARD_MAX) {
       setSelectedVehicle(null);
@@ -96,433 +119,309 @@ export default function VehicleSizePage() {
     }
   }, [passengers, selectedVehicle, setVehicleSelection]);
 
-  // Stepper handlers
-  const handleDecreasePassengers = () => {
-    if (passengers > 1) {
-      const next = passengers - 1;
-      setPassengers(next);
-      if (selectedVehicle === "standard" && next > STANDARD_MAX) {
-        setSelectedVehicle(null);
-      }
-    }
+  // Điều kiện vào trang (sau khi khai báo hook)
+  if (!selectedService) return <Navigate to="/services" replace />;
+  if (!pickupLocation || !destination || !journeyDate || !journeyTime) return <Navigate to="/journey" replace />;
+
+  const eligible = (v: VehicleInfo) => passengers <= v.max;
+  const mismatch = passengers > STANDARD_MAX;
+
+  const changePassengers = (delta: number) => {
+    const next = Math.min(6, Math.max(1, passengers + delta));
+    setPassengers(next);
+    if (selectedVehicle === "standard" && next > STANDARD_MAX) setSelectedVehicle(null);
   };
 
-  const handleIncreasePassengers = () => {
-    if (passengers < 6) {
-      const next = passengers + 1;
-      setPassengers(next);
-      if (selectedVehicle === "standard" && next > STANDARD_MAX) {
-        setSelectedVehicle(null);
-      }
-    }
+  const select = (v: VehicleInfo) => {
+    if (!eligible(v)) return; // xe không đủ chỗ thì không chọn được
+    setSelectedVehicle(v.id);
+    setVehicleSelection(v.id, passengers);
   };
 
-  // Card click handlers
-  const handleSelectStandard = () => {
-    if (!isStandardEligible) return; // Prevent selection of insufficient capacity
-    setSelectedVehicle("standard");
-    setVehicleSelection("standard", passengers);
-  };
-
-  const handleSelectSevenSeater = () => {
-    if (!isSevenSeaterEligible) return;
-    setSelectedVehicle("seven-seater");
-    setVehicleSelection("seven-seater", passengers);
-  };
-
-  // Availability CTA check
-  const isContinueEnabled = Boolean(
-    selectedVehicle &&
-      ((selectedVehicle === "standard" && isStandardEligible) ||
-        (selectedVehicle === "seven-seater" && isSevenSeaterEligible))
-  );
-
+  const isContinueEnabled = Boolean(selectedVehicle && VEHICLES.some((v) => v.id === selectedVehicle && eligible(v)));
   const handleContinue = () => {
     if (!isContinueEnabled || !selectedVehicle) return;
     setVehicleSelection(selectedVehicle, passengers);
     navigate("/availability");
   };
-
   const handleBack = () => {
     setVehicleSelection(selectedVehicle, passengers);
     navigate("/journey");
   };
 
+  const steps = [
+    { key: "journey", n: 1, label: "Journey", tone: "bg-[#22b8ef] text-[#0b2341]" },
+    { key: "vehicle", n: 2, label: "Vehicle Size", tone: "bg-[#0b4a8b] text-white" },
+    { key: "confirm", n: 3, label: "Review", tone: "bg-[#dbe7f7] text-[#0b2341]" },
+  ];
+
   return (
-    <MobileFrame height={926}>
+    <MobileFrame>
       <div
-        className="flex flex-col min-h-[926px] bg-white size-full relative"
         data-testid="vehicle-size-page"
+        className={`${FONT} relative flex min-h-[844px] flex-col bg-[#f4f6fd] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]`}
       >
-        {/* Hidden journey summary descriptors for accessibility & testing contract */}
-        <div className="sr-only" aria-hidden="true">
-          <span data-testid="summary-pickup">{pickupLocation}</span>
-          <span data-testid="summary-destination">{destination}</span>
+        {/* Tóm tắt hành trình (ẩn, cho trình đọc màn hình và test) */}
+        <p className="sr-only">
+          <span data-testid="summary-pickup">{pickupLocation}</span> to <span data-testid="summary-destination">{destination}</span> at{" "}
           <span data-testid="summary-time">{journeyTime}</span>
-        </div>
+        </p>
 
-        {/* Navigation Header */}
-        <header className="flex h-[56px] items-center justify-between border-b border-[#f1f5f9] bg-white px-4 shrink-0">
-          <button
-            type="button"
-            onClick={handleBack}
-            data-testid="back-button"
-            aria-label="Back to Journey Details"
-            className="flex size-9 cursor-pointer items-center justify-center rounded-full text-[#0f172a] hover:bg-[#f1f5f9] transition-colors"
-          >
-            <img alt="Back" className="size-5" src={imgSvg} />
-          </button>
-          <h1 className={`${FONT} text-[16px] font-bold text-[#0f172a]`}>
-            Vehicle Size
-          </h1>
-          <button
-            type="button"
-            onClick={() => navigate("/services")}
-            data-testid="cancel-button"
-            className={`${FONT} text-[14px] text-[#475569] hover:text-[#0f172a] cursor-pointer`}
-          >
-            Cancel
-          </button>
-        </header>
+        <AppBar title="VEHICLE SIZE" onBack={handleBack} backLabel="Back to Journey Details" backTestId="back-button" onCancel={() => navigate("/home")} cancelTestId="cancel-button" />
 
-        {/* 3-Step Stepper Progress Bar */}
-        <div className="bg-white border-b border-[#f1f5f9] px-6 py-3 shrink-0">
-          <div className="flex items-center justify-between">
-            {/* Step 1: Journey (Completed) */}
-            <div className="flex items-center gap-1.5" data-testid="step-journey">
-              <div className="flex size-5 items-center justify-center rounded-full bg-[#f1f5f9]">
-                <img alt="Completed" className="size-3.5" src={imgBackground} />
+        <main className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-8">
+          {/* Các bước */}
+          <ol className="flex items-center gap-2 rounded-xl bg-[#e8eef9] px-3 py-2.5">
+            {steps.map((s, i) => (
+              <li key={s.key} data-testid={`step-${s.key}`} className="flex flex-1 items-center gap-1.5 last:flex-none">
+                <span className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${s.tone}`}>{s.n}</span>
+                <span className={`text-[12.5px] whitespace-nowrap ${s.key === "vehicle" ? "font-semibold text-[#0b2341]" : "text-[#334155]"}`}>{s.label}</span>
+                {i < steps.length - 1 && <span className={`h-0.5 flex-1 rounded ${i === 0 ? "bg-[#22b8ef]" : "bg-[#cbd5e1]"}`} aria-hidden="true" />}
+              </li>
+            ))}
+          </ol>
+
+          <div>
+            <h1 className="text-[22px] leading-8 font-bold text-[#0b2341]">Select Vehicle Size</h1>
+            <p className="text-[14px] leading-5 text-[#334155]">Choose vehicle type based on passenger requirement.</p>
+          </div>
+
+          {mismatch && (
+            <div role="alert" className="flex gap-2.5 rounded-2xl bg-[#fbe5e5] p-4">
+              <span className="mt-0.5 shrink-0 text-[#dc2626]">
+                <Icon name="alertCircle" size={18} />
+              </span>
+              <div>
+                <p className="text-[14.5px] leading-5 font-bold text-[#b91c1c]">Capacity mismatch detected</p>
+                <p className="pt-0.5 text-[12.5px] leading-[18px] text-[#334155]">
+                  Your current party size exceeds the limit for smaller vehicle tiers. Available vehicles have been filtered accordingly.
+                </p>
               </div>
-              <span className={`${FONT} text-[12px] text-[#64748b] font-medium`}>
-                Journey
+            </div>
+          )}
+
+          {/* Số khách */}
+          <section data-testid="passenger-selector" className="rounded-2xl bg-white p-4 shadow-[0px_1px_3px_rgba(15,23,42,0.06)]">
+            <div className="flex items-center justify-between pb-2.5">
+              <p className="text-[15px] font-semibold text-[#0b2341]">
+                Passenger Count <span className="text-[#dc2626]">*</span>
+              </p>
+              <span data-testid="passenger-hint" className="text-[12.5px] text-[#475569]">
+                {passengers <= STANDARD_MAX ? "Standard or 7-Seater suitable" : "7-Seater suitable"}
               </span>
             </div>
-
-            <div className="flex-1 mx-3 h-[1.5px] bg-[#e2e8f0]" />
-
-            {/* Step 2: Vehicle (Active) */}
-            <div className="flex items-center gap-1.5" data-testid="step-vehicle">
-              <span className="flex size-5 items-center justify-center rounded-full bg-[#0b2341] text-white text-[11px] font-bold">
-                2
-              </span>
-              <span className={`${FONT} text-[12px] text-[#0f172a] font-bold`}>
-                Vehicle
-              </span>
-            </div>
-
-            <div className="flex-1 mx-3 h-[1.5px] bg-[#e2e8f0]" />
-
-            {/* Step 3: Confirm (Upcoming) */}
-            <div className="flex items-center gap-1.5" data-testid="step-confirm">
-              <span className="flex size-5 items-center justify-center rounded-full border border-[#e2e8f0] bg-[#f1f5f9] text-[#94a3b8] text-[11px] font-medium">
-                3
-              </span>
-              <span className={`${FONT} text-[12px] text-[#94a3b8]`}>
-                Confirm
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <main className="flex-1 px-4 py-4 flex flex-col gap-4 overflow-y-auto">
-          {/* Section Heading */}
-          <div className="flex flex-col gap-0.5">
-            <h2 className={`${FONT} text-[16px] font-bold uppercase tracking-[0.4px] text-[#0b2341]`}>
-              SELECT VEHICLE SIZE
-            </h2>
-            <p className={`${FONT} text-[12px] text-[#64748b]`}>
-              Choose vehicle type based on passenger requirement
-            </p>
-          </div>
-
-          {/* Passenger Count Selector Card */}
-          <section
-            className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[12px] p-4 flex flex-col gap-2.5 shadow-2xs"
-            data-testid="passenger-selector"
-          >
-            <div className="flex items-center justify-between">
-              <label className={`${FONT} text-[12px] font-bold text-[#1e293b]`}>
-                Passenger Count <span className="text-[#ef4444]">*</span>
-              </label>
-              <span
-                data-testid="passenger-hint"
-                className={`${FONT} text-[11px] font-medium text-[#64748b]`}
-              >
-                {passengers <= STANDARD_MAX
-                  ? "Standard or 7-Seater suitable"
-                  : "7-Seater suitable"}
-              </span>
-            </div>
-
-            {/* Stepper Control Row */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl bg-[#e8eef9] p-1.5">
               <button
                 type="button"
-                onClick={handleDecreasePassengers}
-                disabled={passengers <= 1}
                 data-testid="decrease-passengers"
-                aria-label="Decrease passenger count"
-                className="bg-white border border-[#e2e8f0] rounded-[8px] size-10 flex items-center justify-center hover:bg-[#f1f5f9] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                onClick={() => changePassengers(-1)}
+                disabled={passengers <= 1}
+                aria-label="Fewer passengers"
+                className="flex size-11 cursor-pointer items-center justify-center rounded-lg bg-white text-[#0b2341] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <img alt="Minus" className="size-4" src={imgSvg1} />
+                <Icon name="minus" size={20} />
               </button>
-
-              <div
-                data-testid="passenger-display"
-                className="bg-white border border-[#e2e8f0] rounded-[8px] h-10 flex-1 flex items-center justify-center gap-2 px-3 shadow-2xs"
-              >
-                <img alt="Passenger" className="size-4" src={imgSvg2} />
-                <span className={`${FONT} text-[14px] font-bold text-[#1e293b]`}>
-                  {passengers} {passengers === 1 ? "Passenger" : "Passengers"}
+              <p data-testid="passenger-display" aria-live="polite" className="flex flex-1 items-center justify-center gap-2 text-[17px] font-bold text-[#0b2341]">
+                <span className="text-[#0b5cad]">
+                  <Icon name="users" size={19} />
                 </span>
-              </div>
-
+                {passengers} {passengers === 1 ? "Passenger" : "Passengers"}
+              </p>
               <button
                 type="button"
-                onClick={handleIncreasePassengers}
-                disabled={passengers >= 6}
                 data-testid="increase-passengers"
-                aria-label="Increase passenger count"
-                className="bg-white border border-[#e2e8f0] rounded-[8px] size-10 flex items-center justify-center hover:bg-[#f1f5f9] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                onClick={() => changePassengers(1)}
+                disabled={passengers >= 6}
+                aria-label="More passengers"
+                className="flex size-11 cursor-pointer items-center justify-center rounded-lg bg-white text-[#0b2341] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <img alt="Plus" className="size-4" src={imgSvg3} />
+                <Icon name="plus" size={20} />
               </button>
             </div>
-
-            <p className={`${FONT} text-[11px] text-[#64748b]`}>
-              Passenger count excludes the driver.
-            </p>
           </section>
 
-          {/* Available Categories Section */}
-          <section className="flex flex-col gap-2.5">
-            <span className={`${FONT} text-[12px] font-bold uppercase tracking-[0.6px] text-[#64748b]`}>
-              AVAILABLE CATEGORIES
-            </span>
+          {mismatch && (
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-[13px] font-semibold tracking-[0.8px] text-[#334155]">VEHICLE OPTIONS</h2>
+              <span className="text-[12px] text-[#475569]">{VEHICLES.length} tiers available</span>
+            </div>
+          )}
 
-            {/* Category 1: Standard Car */}
-            <article
-              data-testid="vehicle-card-standard"
-              onClick={isStandardEligible ? handleSelectStandard : undefined}
-              className={`rounded-[14px] p-3.5 flex flex-col gap-2.5 transition-all ${
-                !isStandardEligible
-                  ? "bg-white border border-[#fecdd3] cursor-not-allowed shadow-2xs"
-                  : selectedVehicle === "standard"
-                  ? "bg-[#eff6ff] border border-[#0b2341] shadow-2xs cursor-pointer"
-                  : "bg-white border border-[#e2e8f0] hover:border-[#cbd5e1] shadow-2xs cursor-pointer"
-              }`}
-            >
-              <div className="flex gap-3 items-start">
-                {/* Thumbnail */}
-                <div className={`bg-[#f1f5f9] border border-[#f1f5f9] rounded-[8px] h-[56px] w-[80px] shrink-0 overflow-hidden flex items-center justify-center ${!isStandardEligible ? "opacity-50 grayscale" : ""}`}>
-                  <img
-                    alt="Standard Car"
-                    className="h-full w-full object-cover"
-                    src={imgStandardSaloonFleet}
-                  />
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className={`${FONT} text-[15px] font-bold leading-tight ${!isStandardEligible ? "text-[#94a3b8]" : "text-[#0f172a]"}`}>
-                        Standard Car
-                      </h3>
-                      <p className={`${FONT} text-[12px] ${!isStandardEligible ? "text-[#94a3b8]" : "text-[#64748b]"}`}>
-                        Saloon & Sedan Fleet
-                      </p>
-                    </div>
-
-                    {/* Radio Circle */}
-                    <div className="pt-0.5">
-                      {!isStandardEligible ? (
-                        <div
-                          data-testid="standard-disabled-radio"
-                          className="size-5 rounded-full border-2 border-[#e2e8f0] bg-[#f8fafc]"
-                        />
-                      ) : selectedVehicle === "standard" ? (
-                        <div
-                          data-testid="standard-selected-indicator"
-                          className="size-5 rounded-full bg-[#0b2341] flex items-center justify-center text-white"
-                        >
-                          <img alt="Checked" className="size-3" src={imgSvg6} />
+          {/* Thẻ xe */}
+          <div role="radiogroup" aria-label="Vehicle size" className="flex flex-col gap-4">
+            {VEHICLES.map((v) => {
+              const ok = eligible(v);
+              const selected = selectedVehicle === v.id && ok;
+              const fleetPill = (
+                <Pill className={selected ? "bg-[#0b4a8b] text-white" : "bg-[#22b8ef] text-[#0b2341]"}>
+                  <Icon name="badgeCheck" size={13} /> 2024 Fleet • {v.model}
+                </Pill>
+              );
+              return (
+                <div key={v.id} className="relative">
+                  {selected && (
+                    <span className="absolute -top-2.5 right-3 z-10 flex items-center gap-1 rounded-full bg-[#22b8ef] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0b2341]">
+                      <Icon name="badgeCheck" size={12} /> Selected
+                    </span>
+                  )}
+                  <div
+                    role="radio"
+                    aria-checked={selected}
+                    tabIndex={ok ? 0 : -1}
+                    data-testid={`vehicle-card-${v.testKey}`}
+                    onClick={() => select(v)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        select(v);
+                      }
+                    }}
+                    className={`rounded-2xl p-4 transition-colors ${
+                      !ok
+                        ? "cursor-not-allowed bg-[#fdf1f1]"
+                        : selected
+                          ? "cursor-pointer bg-[#e3effc] shadow-[0px_6px_16px_rgba(11,92,173,0.15)] ring-1 ring-[#b6d4f6]"
+                          : "cursor-pointer bg-white shadow-[0px_1px_3px_rgba(15,23,42,0.06)] hover:bg-[#fbfdff]"
+                    }`}
+                  >
+                    {mismatch ? (
+                      <>
+                        {/* Bố cục "Capacity mismatch": tiêu đề + nhãn, ảnh lớn */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="text-[18px] leading-6 font-bold text-[#0b2341]">{v.name}</p>
+                            {ok ? (
+                              <Pill className="bg-[#cfe9fb] text-[#0b4a8b]">
+                                <Icon name="check" size={12} /> Suitable
+                              </Pill>
+                            ) : (
+                              <span data-testid={`${v.testKey}-insufficient-badge`}>
+                                <Pill className="bg-[#fde2e2] text-[#dc2626]">
+                                  <Icon name="ban" size={12} /> Unavailable
+                                </Pill>
+                              </span>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-[18px] font-bold text-[#0b2341]">{v.price}</p>
+                            <p className="text-[11px] leading-3 text-[#475569]">Base estimate</p>
+                          </div>
                         </div>
-                      ) : (
-                        <div
-                          data-testid="standard-unselected-indicator"
-                          className="size-5 rounded-full border-2 border-[#cbd5e1]"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className={`flex items-center gap-1 text-[12px] ${!isStandardEligible ? "text-[#94a3b8]" : "text-[#475569]"}`}>
-                      <img alt="" className={`size-3.5 ${!isStandardEligible ? "opacity-50" : ""}`} src={imgSvg4} />
-                      <span className={FONT}>Up to 4</span>
-                    </div>
-                    <div className={`flex items-center gap-1 text-[12px] ${!isStandardEligible ? "text-[#94a3b8]" : "text-[#475569]"}`}>
-                      <img alt="" className={`size-3.5 ${!isStandardEligible ? "opacity-50" : ""}`} src={imgSvg5} />
-                      <span className={FONT}>2 Bags</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Sub-Row */}
-              <div className={`pt-2 border-t flex items-center justify-between text-[11px] ${!isStandardEligible ? "border-[#fecdd3]/60" : "border-[#f1f5f9]"}`}>
-                {!isStandardEligible ? (
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-1.5 text-[#e11d48]">
-                      <span className="shrink-0 text-[#e11d48]">
-                        <Icon name="alert" size={13} strokeWidth={2.5} />
-                      </span>
-                      <span className="leading-tight text-[11px]">
-                        This vehicle cannot accommodate {passengers} passengers. Maximum capacity is 4.
-                      </span>
-                    </div>
-                    <span
-                      data-testid="standard-insufficient-badge"
-                      className="bg-[#ffe4e6] border border-[#fecdd3] text-[#e11d48] text-[9px] font-bold px-2 py-0.5 rounded tracking-wide shrink-0 ml-2"
-                    >
-                      INSUFFICIENT CAPACITY
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="text-[#64748b] truncate pr-2">
-                      Great value for daily commute & solo travelers
-                    </span>
-                    {selectedVehicle === "standard" ? (
-                      <span className="flex items-center gap-1 text-[#0b2341] font-bold shrink-0">
-                        <img alt="" className="size-3" src={imgSvg9} /> Selected
-                      </span>
+                        <div className="pt-1.5">{fleetPill}</div>
+                        <p className="pt-1.5 text-[13.5px] text-[#334155]">
+                          Capacity: Up to {v.max} passengers • {v.bags} Luggage
+                        </p>
+                        <div className="mt-2.5 flex h-[110px] items-center justify-center overflow-hidden rounded-xl bg-[#eef2fb]">
+                          <img src={v.photo} alt={`${v.name} — ${v.model}`} className={`h-full object-contain ${ok ? "" : "opacity-60 grayscale"}`} />
+                        </div>
+                        {ok ? (
+                          <div className="flex items-center justify-between pt-3">
+                            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[#0b5cad]">
+                              <Icon name="armchair" size={15} /> Spacious interior &amp; luggage room
+                            </p>
+                            <span className="flex items-center gap-2 text-[13px] font-medium text-[#0b2341]">
+                              {selected ? "Selected" : "Select"} <Radio selected={selected} disabled={false} testKey={v.testKey} />
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-[12.5px] font-semibold text-[#dc2626]">
+                            <Icon name="alertCircle" size={15} /> This vehicle cannot accommodate {passengers} passengers.
+                            <span className="sr-only">
+                              <Radio selected={false} disabled testKey={v.testKey} />
+                            </span>
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <span className="text-[#0284c7] font-semibold shrink-0">
-                        Tap to select
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            </article>
-
-            {/* Category 2: Seven-Seater */}
-            <article
-              data-testid="vehicle-card-seven-seater"
-              onClick={isSevenSeaterEligible ? handleSelectSevenSeater : undefined}
-              className={`rounded-[14px] p-3.5 flex flex-col gap-2.5 transition-all ${
-                selectedVehicle === "seven-seater"
-                  ? "bg-[#eff6ff] border border-[#0b2341] shadow-2xs cursor-pointer"
-                  : "bg-white border border-[#e2e8f0] hover:border-[#cbd5e1] shadow-2xs cursor-pointer"
-              }`}
-            >
-              <div className="flex gap-3 items-start">
-                {/* Thumbnail */}
-                <div className="bg-[#e2e8f0] border border-[#dbeafe] rounded-[8px] h-[56px] w-[80px] shrink-0 overflow-hidden flex items-center justify-center">
-                  <img
-                    alt="Seven-Seater"
-                    className="h-full w-full object-cover"
-                    src={imgExecutiveVanMpvFleet}
-                  />
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className={`${FONT} text-[15px] font-bold text-[#0f172a] leading-tight`}>
-                        Seven-Seater
-                      </h3>
-                      <p className={`${FONT} text-[12px] text-[#64748b]`}>
-                        Executive Van & MPV Fleet
-                      </p>
-                    </div>
-
-                    {/* Radio Circle */}
-                    <div className="pt-0.5">
-                      {selectedVehicle === "seven-seater" ? (
-                        <div
-                          data-testid="seven-seater-selected-indicator"
-                          className="size-5 rounded-full bg-[#0b2341] flex items-center justify-center text-white"
-                        >
-                          <img alt="Checked" className="size-3" src={imgSvg6} />
+                      <>
+                        {/* Bố cục thường: ảnh nhỏ bên trái */}
+                        <div className="flex gap-3.5">
+                          <img src={v.thumb} alt={`${v.name} — ${v.model}`} className="h-[64px] w-[96px] shrink-0 rounded-lg object-cover" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-[17px] leading-6 font-bold text-[#0b2341]">{v.name}</p>
+                              <Radio selected={selected} disabled={!ok} testKey={v.testKey} />
+                            </div>
+                            <Pill className={selected ? "bg-[#9cc8f6] text-[#0b2341]" : "bg-[#e2e8f0] text-[#334155]"}>{v.tag}</Pill>
+                            <div className="pt-1.5">{fleetPill}</div>
+                            <p className="pt-1.5 text-[13.5px] leading-5 text-[#334155]">
+                              Up to {v.max} passengers • {v.bags} Luggage
+                            </p>
+                            <div className="flex items-end justify-between pt-1">
+                              <p className="flex items-center gap-2.5 text-[12.5px] text-[#334155]">
+                                <span className="flex items-center gap-0.5">
+                                  <Icon name="user" size={13} /> {v.max}
+                                </span>
+                                <span className="flex items-center gap-0.5">
+                                  <Icon name="luggage" size={13} /> {v.bags}
+                                </span>
+                                <span className="flex items-center gap-0.5">
+                                  <Icon name={v.extra.icon} size={13} /> {v.extra.label}
+                                </span>
+                              </p>
+                              <p className="text-[19px] font-bold text-[#0b2341]">{v.price}</p>
+                            </div>
+                          </div>
                         </div>
-                      ) : (
-                        <div
-                          data-testid="seven-seater-unselected-indicator"
-                          className="size-5 rounded-full border-2 border-[#cbd5e1]"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className="flex items-center gap-1 text-[12px] text-[#334155]">
-                      <img alt="" className="size-3.5" src={imgSvg7} />
-                      <span className={FONT}>Up to 6</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[12px] text-[#334155]">
-                      <img alt="" className="size-3.5" src={imgSvg8} />
-                      <span className={FONT}>4 Bags</span>
-                    </div>
+                        <div className="flex items-center justify-between pt-2.5">
+                          <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-[#0b5cad]">
+                            {selected && <Icon name={v.footnote.icon} size={14} />}
+                            {v.footnote.label}
+                          </p>
+                          <span className="text-[12.5px] font-semibold text-[#0b2341]">{selected ? "Confirmed" : "Tap to select"}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
 
-              {/* Bottom Sub-Row */}
-              <div className="pt-2 border-t border-[rgba(191,219,254,0.6)] flex items-center justify-between text-[11px]">
-                <span className="text-[#475569] truncate pr-2">
-                  Ideal for families, extra luggage, or group runs
-                </span>
-                {selectedVehicle === "seven-seater" ? (
-                  <span className="flex items-center gap-1 text-[#0b2341] font-bold shrink-0">
-                    <img alt="" className="size-3" src={imgSvg9} /> Selected
-                  </span>
-                ) : (
-                  <span className="text-[#0284c7] font-semibold shrink-0">
-                    Tap to select
-                  </span>
-                )}
-              </div>
-            </article>
-          </section>
-        </main>
+          {!mismatch && (
+            <p className="flex items-start gap-2.5 rounded-2xl bg-[#e8eef9] px-4 py-3 text-[12.5px] leading-[18px] text-[#334155]">
+              <span className="shrink-0 text-[#0b5cad]">
+                <Icon name="badgeCheck" size={16} />
+              </span>
+              All vehicles are fully licensed, sanitized prior to dispatch, and piloted by certified private-hire chauffeurs.
+            </p>
+          )}
 
-        {/* Footer Actions */}
-        <footer className="bg-white border-t border-[#f1f5f9] p-4 flex flex-col gap-2 shrink-0 mt-auto">
           <button
             type="button"
+            data-testid="check-availability-button"
             onClick={handleContinue}
             disabled={!isContinueEnabled}
-            data-testid="check-availability-button"
-            className={`${FONT} w-full h-[50px] rounded-[12px] font-bold text-[14px] flex items-center justify-center gap-2 transition-all ${
+            className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[16px] font-semibold transition-colors ${
               isContinueEnabled
-                ? "bg-[#0b2341] hover:bg-[#13335a] text-white cursor-pointer drop-shadow-sm"
-                : "bg-[#dbe4ee] text-[#94a3b8] cursor-not-allowed"
+                ? "cursor-pointer bg-[#65b3fc] text-white shadow-[0px_4px_10px_rgba(101,179,252,0.35)] hover:bg-[#3f84c4]"
+                : "cursor-not-allowed bg-[#d6e6fb] text-[#64748b]"
             }`}
           >
-            <span>Check Vehicle Availability</span>
-            <img
-              alt=""
-              className={`size-4 ${!isContinueEnabled ? "opacity-40" : ""}`}
-              src={imgSvg10}
-            />
+            {!isContinueEnabled && <Icon name="calendar" size={17} />}
+            Check Vehicle Availability
+            {isContinueEnabled && <Icon name="arrowRight" size={18} />}
           </button>
-
           <button
             type="button"
-            onClick={handleBack}
             data-testid="back-to-journey"
-            className={`${FONT} w-full py-1 text-center font-bold text-[12px] text-[#0b2341] hover:underline cursor-pointer`}
+            onClick={handleBack}
+            className="mx-auto flex cursor-pointer items-center gap-1.5 text-[14px] font-semibold text-[#0b2341] hover:underline"
           >
-            ‹ Back to Journey Details
+            <Icon name="arrowLeft" size={16} /> Back to Journey Details
           </button>
-        </footer>
+
+          {mismatch && (
+            <p className="flex items-center justify-center gap-6 rounded-xl bg-[#e8eef9] py-3 text-[12.5px] text-[#0b2341]">
+              <span className="flex items-center gap-1.5">
+                <Icon name="shield" size={15} /> Vetted Chauffeurs
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Icon name="clock" size={15} /> Free 15-min Wait
+              </span>
+            </p>
+          )}
+        </main>
       </div>
     </MobileFrame>
   );

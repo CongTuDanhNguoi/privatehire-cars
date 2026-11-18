@@ -35,7 +35,6 @@
   }
   body {
     margin: 0;
-    min-width: 1280px; /* desktop-only portal (plan §8.4) */
     /* Very light blue-grey page background, mixed only from UI Kit tokens. */
     background-color: color-mix(in srgb, var(--color-muted) 30%, var(--color-surface));
     color: var(--color-ink);

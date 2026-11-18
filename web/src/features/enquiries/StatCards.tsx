@@ -35,26 +35,26 @@ const CARDS: CardDef[] = [
 
 export function StatCards({ counts, type, status, onPick }: StatCardsProps) {
   return (
-    <ul aria-label="Summary" className="grid grid-cols-4 gap-4">
+    <ul aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       {CARDS.map((card) => {
         const active = card.change.status ? status === card.change.status : type === card.change.type;
         return (
-          <li key={card.key}>
+          <li key={card.key} className="flex">
             <button
               type="button"
               aria-pressed={active}
               onClick={() => onPick(card.change)}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-4 rounded-xl border bg-surface p-5 text-left shadow-sm transition-[border-color,box-shadow] duration-150 hover:shadow-md",
+                "flex w-full cursor-pointer flex-col items-start gap-2 rounded-xl border bg-surface p-4 text-left shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-5 transition-[border-color,box-shadow] duration-150 hover:shadow-md",
                 active ? "border-primary-pressed" : "border-muted",
               )}
             >
-              <span className={cn("grid size-11 shrink-0 place-items-center rounded-full", card.tone)}>
-                <Icon name={card.icon} size={22} />
+              <span className={cn("grid size-9 shrink-0 place-items-center rounded-full sm:size-11", card.tone)}>
+                <Icon name={card.icon} size={20} />
               </span>
-              <span className="flex flex-col">
+              <span className="flex min-w-0 flex-col">
                 <span className="text-page font-bold tabular-nums text-ink">{counts ? counts[card.key] : "—"}</span>
-                <span className="text-label text-ink">{card.label}</span>
+                <span className="truncate text-label text-ink">{card.label}</span>
               </span>
             </button>
           </li>

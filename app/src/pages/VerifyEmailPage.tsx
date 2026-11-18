@@ -1,7 +1,7 @@
 // =============================================================
 // VerifyEmailPage — nhập mã OTP 6 số gửi qua email sau khi đăng ký (P0-18).
 // Không có frame Figma riêng: dựng theo phong cách màn Registration / Registration Complete
-// (header logo + tiêu đề, ô nhập viền 1px #cbd5e1 / lỗi 2px #ef4444, nút #0b2341).
+// (header logo + tiêu đề, ô nhập viền 1px #cbd5e1 / lỗi 2px #ef4444, nút primary #65b3fc).
 // Ô mã theo hướng dẫn web hiện đại: 1 ô duy nhất, inputmode="numeric", autocomplete="one-time-code".
 // =============================================================
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
@@ -121,7 +121,7 @@ export default function VerifyEmailPage() {
 
         <form noValidate onSubmit={submit} className="flex flex-1 flex-col justify-between px-4 pt-8 pb-4">
           <div className="flex flex-col items-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-[#0b2341] text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex size-16 items-center justify-center rounded-full border-2 border-[#05c1fa] bg-[#def7ff] text-[#05c1fa]">
               <Icon name="mail" size={30} />
             </div>
             <h2 className={`${FONT} pt-4 text-center text-[22px] leading-8 font-bold text-[#0f172a]`}>
@@ -192,7 +192,7 @@ export default function VerifyEmailPage() {
               type="submit"
               disabled={submitting}
               data-testid="verify-code"
-              className={`${FONT} flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0b2341] text-[16px] font-semibold text-white transition-colors hover:bg-[#13335a] disabled:cursor-wait`}
+              className={`${FONT} flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[16px] font-semibold text-white transition-colors hover:bg-[#3f84c4] disabled:cursor-wait`}
             >
               Verify Email <span aria-hidden="true">→</span>
             </button>

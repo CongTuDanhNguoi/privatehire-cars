@@ -9,7 +9,7 @@ import { formatDateTime, isoDateTime, UK_TIME_ZONE } from "../../lib/format";
 function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-muted/60 py-2.5 last:border-b-0">
-      <dt className="text-helper font-semibold tracking-wide text-ink/70 uppercase">{term}</dt>
+      <dt className="text-helper font-semibold text-ink/70 uppercase">{term}</dt>
       <dd className="m-0 min-w-0 text-body break-words text-ink">{children}</dd>
     </div>
   );

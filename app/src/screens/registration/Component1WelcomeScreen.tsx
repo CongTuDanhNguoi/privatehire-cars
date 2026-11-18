@@ -151,7 +151,7 @@ export default function Component1WelcomeScreen() {
         </div>
         <div className="absolute content-stretch flex flex-col items-start left-[20px] pt-[24px] right-[20px] top-[751.86px]" data-node-id="6:468" data-name="Action CTA Area:margin">
           <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full" data-node-id="6:469" data-name="Action CTA Area">
-            <div className="bg-[#001d34] content-stretch flex gap-[8px] h-[48px] items-center justify-center relative rounded-[12px] shrink-0 w-full" data-node-id="6:470" data-name="Button - Primary CTA: Sign Up">
+            <div className="bg-[#65b3fc] content-stretch flex gap-[8px] h-[48px] items-center justify-center relative rounded-[12px] shrink-0 w-full" data-node-id="6:470" data-name="Button - Primary CTA: Sign Up">
               <div className="absolute bg-[rgba(255,255,255,0)] h-[48px] left-0 right-0 rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] top-0" data-node-id="6:471" data-name="Button - Primary CTA: Sign Up:shadow" />
               <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="6:472" data-name="Container">
                 <div className="[word-break:break-word] flex flex-col font-['Inter',sans-serif] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-center text-white whitespace-nowrap" data-node-id="6:473">
