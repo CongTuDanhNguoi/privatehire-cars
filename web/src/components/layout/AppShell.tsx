@@ -43,11 +43,11 @@ function Sidebar() {
   }
 
   return (
-    <aside className="sticky top-0 flex h-dvh w-[248px] shrink-0 flex-col bg-ink text-surface">
-      <NavLink to="/enquiries" className={cn("flex items-center gap-3 px-6 pt-6 pb-8", ON_NAVY_FOCUS)}>
-        <img src={logo} alt="" width={56} height={29} className="h-9 w-auto rounded bg-surface p-0.5" />
+    <aside className="sticky top-0 flex h-dvh w-[224px] shrink-0 flex-col bg-ink text-surface">
+      <NavLink to="/enquiries" className={cn("flex items-center gap-3 px-5 pt-6 pb-8", ON_NAVY_FOCUS)}>
+        <img src={logo} alt="" width={56} height={29} className="h-8 w-auto rounded bg-surface p-0.5" />
         <span className="flex flex-col">
-          <span className="text-label font-bold">PrivateHire Cars</span>
+          <span className="text-label font-bold whitespace-nowrap">PrivateHire Cars</span>
           <span className="text-helper text-surface/70">Staff Portal</span>
         </span>
       </NavLink>
@@ -78,7 +78,7 @@ function Sidebar() {
         </ul>
       </nav>
 
-      <div className="flex flex-col gap-4 border-t border-surface/15 p-6">
+      <div className="flex flex-col gap-4 border-t border-surface/15 p-5">
         {staff && (
           <div className="flex min-w-0 items-center gap-3">
             <Avatar name={staff.fullName} size="md" />

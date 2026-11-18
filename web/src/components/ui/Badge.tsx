@@ -6,9 +6,15 @@ const base = "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2
 
 export function TypeBadge({ type }: { type: EnquiryType }) {
   return type === "TRIP" ? (
-    <span className={cn(base, "border border-success bg-success-fill text-ink")}>Trip</span>
+    <span className={cn(base, "border border-success bg-success-fill text-ink")}>
+      <Icon name="car" size={14} />
+      Trip
+    </span>
   ) : (
-    <span className={cn(base, "border border-muted bg-muted text-ink")}>General</span>
+    <span className={cn(base, "border border-muted bg-muted text-ink")}>
+      <Icon name="mail" size={14} />
+      General
+    </span>
   );
 }
 
@@ -19,7 +25,10 @@ export function StatusBadge({ status }: { status: EnquiryStatus }) {
       Resolved
     </span>
   ) : (
-    <span className={cn(base, "border border-primary-pressed bg-surface text-primary-pressed")}>Awaiting</span>
+    <span className={cn(base, "border border-primary-pressed bg-surface text-primary-pressed")}>
+      <Icon name="clock" size={14} />
+      Awaiting
+    </span>
   );
 }
 
