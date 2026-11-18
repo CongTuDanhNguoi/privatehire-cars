@@ -51,7 +51,12 @@ export function ResponseHistory({ responses, retryingId, onRetry }: ResponseHist
       ) : (
         <ol className="m-0 flex list-none flex-col gap-4 p-0">
           {responses.map((r) => (
-            <li key={r.id} className="rounded-lg border border-muted p-4">
+            <li
+              key={r.id}
+              className={`rounded-lg border border-l-4 border-muted p-4 ${
+                r.sendStatus === "SENT" ? "border-l-success" : r.sendStatus === "FAILED" ? "border-l-error" : "border-l-line"
+              }`}
+            >
               <article aria-labelledby={`response-subject-${r.id}`} className="flex flex-col gap-2">
                 <div className="flex items-start justify-between gap-3">
                   <h3 id={`response-subject-${r.id}`} className="text-body font-bold break-words text-ink">
@@ -93,7 +98,7 @@ const STATUS_LABEL = { AWAITING: "Awaiting", RESOLVED: "Resolved" } as const;
 export function StatusHistory({ items }: { items: StatusChange[] }) {
   if (items.length === 0) return null;
   return (
-    <section aria-labelledby="status-history-title" className="px-1">
+    <section aria-labelledby="status-history-title" className="rounded-xl border border-muted bg-surface p-6 shadow-sm">
       <h2 id="status-history-title" className="text-label font-semibold text-ink">
         Status history
       </h2>

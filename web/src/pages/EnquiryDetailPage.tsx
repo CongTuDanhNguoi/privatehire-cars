@@ -188,13 +188,12 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
         />
       </header>
 
+      {/* Left (8/12): the conversation — question, replies, reply box. Right (4/12): reference info.
+          The left column comes first in the DOM so the response list is the first <ol> on the page. */}
       <div className="grid grid-cols-12 items-start gap-6">
-        <div className="col-span-5 flex flex-col gap-6">
-          <CustomerCard customer={detail.customer} />
-          <EnquiryCard message={enquiry.message} createdAt={enquiry.createdAt} />
-          {enquiry.type === "TRIP" && detail.booking && <TripCard booking={detail.booking} />}
-        </div>
-        <div className="col-span-7 flex flex-col gap-6">
+        <div className="col-span-8 flex min-w-0 flex-col gap-6">
+          <EnquiryCard message={enquiry.message} createdAt={enquiry.createdAt} customerName={detail.customer.fullName} />
+          <ResponseHistory responses={detail.responses} retryingId={retryingId} onRetry={(rid) => void retry(rid)} />
           <ReplyComposer
             detail={detail}
             emailSettings={emailSettings}
@@ -206,7 +205,10 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
             onSent={clear}
             retry={retry}
           />
-          <ResponseHistory responses={detail.responses} retryingId={retryingId} onRetry={(rid) => void retry(rid)} />
+        </div>
+        <div className="col-span-4 flex min-w-0 flex-col gap-6">
+          <CustomerCard customer={detail.customer} />
+          {enquiry.type === "TRIP" && detail.booking && <TripCard booking={detail.booking} />}
           <StatusHistory items={detail.statusHistory} />
         </div>
       </div>
