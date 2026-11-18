@@ -1,12 +1,11 @@
 // Layout for signed-in pages.
-// Desktop (md+): navy sidebar (white brand strip with the logo, menu, staff + Log out).
-// Mobile (<md): white top bar (logo, menu with awaiting count, Log out icon).
-// The logo PNG has a white background, so it always sits on white and blends in (mix-blend-multiply) — no frame.
+// Desktop (md+): light sidebar (logo, menu, staff + Log out). Mobile (<md): white top bar (logo, menu, Log out icon).
+// logo-transparent.png = the brand logo with its pale background removed, so it sits on the page with no box.
 import { createContext, useContext, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import type { EmailSettings } from "../../types";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo-transparent.png";
 import { enquiriesApi } from "../../api/enquiries";
 import { useAsync } from "../../lib/useAsync";
 import { Avatar } from "../ui/Avatar";
@@ -18,8 +17,6 @@ import { EmailModeBanner, useEmailSettings } from "./EmailModeBanner";
 const EmailSettingsContext = createContext<EmailSettings | null>(null);
 export const useEmailSettingsContext = () => useContext(EmailSettingsContext);
 
-// Focus ring that stays visible on the navy background.
-const ON_NAVY_FOCUS = "focus-visible:outline-primary";
 
 interface ShellProps {
   awaiting: number | undefined;
@@ -40,26 +37,26 @@ function AwaitingBadge({ awaiting }: { awaiting: number | undefined }) {
 function Sidebar({ awaiting, signingOut, onSignOut }: ShellProps) {
   const { staff } = useAuth();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[224px] shrink-0 flex-col bg-ink text-surface md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-[240px] shrink-0 flex-col border-r border-muted bg-surface text-ink md:flex">
       <NavLink
         to="/enquiries"
         aria-label="PrivateHire Cars Staff Portal — Enquiries"
-        className="flex flex-col items-start gap-1 bg-surface px-5 pt-5 pb-4 text-ink"
+        className="flex flex-col items-center gap-1 px-5 pt-6 pb-5"
       >
-        <img src={logo} alt="" width={140} height={72} className="h-12 w-auto mix-blend-multiply" />
-        <span className="text-helper font-semibold text-ink/70 uppercase">Staff Portal</span>
+        <img src={logo} alt="" width={195} height={101} className="h-16 w-auto" />
+        <span className="text-helper font-semibold text-ink/60 uppercase">Staff Portal</span>
       </NavLink>
 
-      <nav aria-label="Main" className="flex-1 px-3 pt-6">
+      <p className="px-6 pb-2 text-helper font-semibold text-ink/50 uppercase">Menu</p>
+      <nav aria-label="Main" className="flex-1 px-3">
         <ul className="flex flex-col gap-1">
           <li>
             <NavLink
               to="/enquiries"
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 rounded-lg border-l-[3px] border-transparent px-3 py-2.5 text-label font-semibold transition-colors duration-150 hover:bg-surface/10",
-                  isActive && "border-primary bg-surface/10",
-                  ON_NAVY_FOCUS,
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-label font-semibold text-ink transition-colors duration-150 hover:bg-muted/50",
+                  isActive && "bg-primary/15 text-primary-pressed hover:bg-primary/20",
                 )
               }
             >
@@ -71,13 +68,13 @@ function Sidebar({ awaiting, signingOut, onSignOut }: ShellProps) {
         </ul>
       </nav>
 
-      <div className="flex flex-col gap-4 border-t border-surface/15 p-5">
+      <div className="m-3 flex flex-col gap-3 rounded-xl border border-muted bg-muted/20 p-4">
         {staff && (
           <div className="flex min-w-0 items-center gap-3">
             <Avatar name={staff.fullName} size="md" />
             <div className="min-w-0">
               <p className="truncate text-label font-semibold">{staff.fullName}</p>
-              <p className="truncate text-helper text-surface/70">{staff.email}</p>
+              <p className="truncate text-helper text-ink/60">{staff.email}</p>
             </div>
           </div>
         )}
@@ -86,8 +83,7 @@ function Sidebar({ awaiting, signingOut, onSignOut }: ShellProps) {
           onClick={onSignOut}
           disabled={signingOut}
           className={cn(
-            "flex h-11 items-center justify-center gap-2 rounded-lg border border-surface/40 text-label font-semibold transition-colors duration-150 hover:bg-surface/10 disabled:cursor-progress",
-            ON_NAVY_FOCUS,
+            "flex h-10 items-center justify-center gap-2 rounded-lg border border-ink bg-surface text-label font-semibold text-ink transition-colors duration-150 hover:bg-muted/60 disabled:cursor-progress",
           )}
         >
           {signingOut ? (
@@ -113,7 +109,7 @@ function MobileHeader({ awaiting, signingOut, onSignOut }: ShellProps) {
   return (
     <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-muted bg-surface px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] md:hidden">
       <NavLink to="/enquiries" aria-label="PrivateHire Cars Staff Portal — Enquiries" className="shrink-0">
-        <img src={logo} alt="" width={140} height={72} className="h-9 w-auto mix-blend-multiply" />
+        <img src={logo} alt="" width={195} height={101} className="h-10 w-auto" />
       </NavLink>
       <nav aria-label="Main mobile" className="min-w-0 flex-1">
         <NavLink

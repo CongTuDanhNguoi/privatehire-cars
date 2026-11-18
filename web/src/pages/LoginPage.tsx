@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo-transparent.png";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
 import { Icon } from "../components/ui/Icon";
@@ -110,8 +110,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center bg-surface px-4 py-10 sm:px-8 sm:py-12">
       <div className="w-full max-w-[400px]">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          {/* The logo PNG has a white background: on white + multiply it shows without any frame. */}
-          <img src={logo} alt="PrivateHire Cars" width={140} height={72} className="h-16 w-auto mix-blend-multiply" />
+          <img src={logo} alt="PrivateHire Cars" width={195} height={101} className="h-20 w-auto" />
           <h1 className="text-page font-bold text-balance text-ink">Staff Portal</h1>
           <p className="text-body text-ink">Sign in to manage customer enquiries</p>
         </div>
