@@ -8,9 +8,10 @@ interface AppBarProps {
   title: string;
   onBack?: () => void;
   backLabel?: string;
+  onCancel?: () => void; // nút "Cancel" xanh cạnh avatar (luồng đặt xe)
 }
 
-export default function AppBar({ title, onBack, backLabel = "Back" }: AppBarProps) {
+export default function AppBar({ title, onBack, backLabel = "Back", onCancel }: AppBarProps) {
   const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-20 flex h-[60px] items-center gap-2 border-b border-[#eef2f7] bg-white/95 px-4 backdrop-blur-sm">
@@ -27,6 +28,11 @@ export default function AppBar({ title, onBack, backLabel = "Back" }: AppBarProp
       <img src={logo} alt="PrivateHire Cars" className="h-11 w-auto object-contain" />
       <div className="ml-auto flex min-w-0 items-center gap-2.5">
         <p className="truncate font-['Inter',sans-serif] text-[18px] font-bold text-[#0b2341]">{title}</p>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="shrink-0 cursor-pointer font-['Inter',sans-serif] text-[15px] font-semibold text-[#0b5cad] hover:underline">
+            Cancel
+          </button>
+        )}
         <button
           type="button"
           onClick={() => navigate("/profile")}
