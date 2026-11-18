@@ -313,7 +313,7 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <button type="submit" disabled={submitting} className="bg-[#0b2341] content-stretch flex gap-[8.01px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full cursor-pointer disabled:cursor-wait" data-node-id="6:873" data-name="Primary Submit Button → Button">
+                  <button type="submit" disabled={submitting} className="bg-[#65b3fc] content-stretch flex gap-[8.01px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full cursor-pointer disabled:cursor-wait" data-node-id="6:873" data-name="Primary Submit Button → Button">
                     <div className="absolute bg-[rgba(255,255,255,0)] inset-0 rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)]" data-node-id="6:874" data-name="Button:shadow" />
                     <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="6:875" data-name="Container">
                       <div className={`[word-break:break-word] flex flex-col ${FONT} font-semibold justify-center leading-[0] relative shrink-0 text-[16px] text-center text-white whitespace-nowrap`} data-node-id="6:876">

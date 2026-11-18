@@ -55,6 +55,22 @@ export default function ProfilePage() {
   return (
     <MobileFrame>
       <div className="relative min-h-[844px] bg-[#f8fafc] pb-24 shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]">
+        {/* App header (Figma Sprint 1 — SCRUM-15 "3. Profile"), same brand bar as Home */}
+        <header className="flex items-center justify-between border-b border-[#f1f5f9] bg-white px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[#2563eb] text-white">
+              <Icon name="car" size={20} />
+            </span>
+            <span className="flex flex-col">
+              <span className={`${FONT} text-[14px] leading-[18px] font-semibold text-[#191c1e]`}>PrivateHire</span>
+              <span className={`${FONT} text-[11px] leading-[14px] text-[#404750]`}>Executive Mobility</span>
+            </span>
+          </div>
+          <span className="text-[#404750]" aria-hidden="true">
+            <Icon name="bell" size={20} />
+          </span>
+        </header>
+
         <main className="px-4 pt-5">
           <h1 className={`${FONT} px-1 text-[20px] leading-7 font-bold tracking-[-0.4px] text-[#0b2341]`}>My Profile</h1>
           <p className={`${FONT} px-1 text-[13px] leading-5 text-[#64748b]`}>Manage personal mobility preferences</p>

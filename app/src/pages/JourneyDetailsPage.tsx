@@ -665,7 +665,7 @@ export default function JourneyDetailsPage() {
               <button
                 type="button"
                 onClick={handleConfirmFromMap}
-                className={`${FONT} w-full h-[50px] rounded-xl bg-[#0b2341] font-bold text-[14px] text-white hover:bg-[#13335a] cursor-pointer flex items-center justify-center gap-2 shadow-md transition-colors`}
+                className={`${FONT} w-full h-[50px] rounded-xl bg-[#65b3fc] font-bold text-[14px] text-white hover:bg-[#3f84c4] cursor-pointer flex items-center justify-center gap-2 shadow-md transition-colors`}
               >
                 Confirm Location →
               </button>
@@ -1046,7 +1046,7 @@ export default function JourneyDetailsPage() {
                   <button
                     type="submit"
                     data-testid="continue-to-vehicle"
-                    className="bg-[#0b2341] content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[8px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full cursor-pointer hover:bg-[#13335a] transition-colors"
+                    className="bg-[#65b3fc] content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[8px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full cursor-pointer hover:bg-[#3f84c4] transition-colors"
                     data-node-id="6:1613"
                     data-name="Button"
                   >

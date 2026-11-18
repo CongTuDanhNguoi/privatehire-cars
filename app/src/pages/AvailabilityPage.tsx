@@ -504,7 +504,7 @@ export default function AvailabilityPage() {
                   type="button"
                   onClick={handleChangeDateTime}
                   data-testid="change-datetime-btn"
-                  className={`${FONT} w-full h-11 rounded-xl bg-[#0b2341] text-white font-bold text-[13px] hover:bg-[#13335a] cursor-pointer flex items-center justify-center gap-2 shadow-xs transition-colors`}
+                  className={`${FONT} w-full h-11 rounded-xl bg-[#65b3fc] text-white font-bold text-[13px] hover:bg-[#3f84c4] cursor-pointer flex items-center justify-center gap-2 shadow-xs transition-colors`}
                 >
                   <Icon name="calendar" size={16} /> Change Date or Time
                 </button>

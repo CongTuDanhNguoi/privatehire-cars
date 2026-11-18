@@ -243,7 +243,7 @@ export default function SupportPage() {
               <button
                 type="button"
                 onClick={() => navigate("/profile")}
-                className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0b2341] text-[15px] font-semibold text-white`}
+                className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[15px] font-semibold text-white`}
               >
                 Back to Profile <Icon name="arrowRight" size={18} />
               </button>
@@ -410,7 +410,7 @@ export default function SupportPage() {
             <button
               type="submit"
               aria-disabled={submitting || undefined}
-              className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0b2341] text-[15px] font-semibold text-white aria-disabled:cursor-wait`}
+              className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[15px] font-semibold text-white aria-disabled:cursor-wait`}
             >
               {submitting ? "Sending…" : "Send enquiry"} {!submitting && <Icon name="arrowRight" size={18} />}
             </button>

@@ -211,7 +211,7 @@ export default function Component1Home() {
                     <p className="leading-[19.5px]">real-time dispatch tracking.</p>
                   </div>
                 </div>
-                <div className="bg-[#0b1e36] content-stretch flex items-center justify-center px-[16px] py-[12px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:1101" data-name="Button">
+                <div className="bg-[#65b3fc] content-stretch flex items-center justify-center px-[16px] py-[12px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:1101" data-name="Button">
                   <div className="absolute bg-[rgba(255,255,255,0)] inset-0 rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(11,30,54,0.1),0px_2px_4px_-2px_rgba(11,30,54,0.1)]" data-node-id="6:1102" data-name="Button:shadow" />
                   <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="6:1103" data-name="Container">
                     <div className="[word-break:break-word] flex flex-col font-['Liberation_Sans',Arial,sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-center text-white whitespace-nowrap" data-node-id="6:1104">

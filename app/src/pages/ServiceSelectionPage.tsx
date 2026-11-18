@@ -37,8 +37,16 @@ export default function ServiceSelectionPage() {
           >
             <Icon name="chevronLeft" size={20} />
           </button>
-          <p className={`${FONT} text-[16px] font-bold tracking-[-0.4px] text-[#0b2341]`}>Book a Ride</p>
-          <span className="size-9" />
+          <p className={`${FONT} text-[16px] font-bold tracking-[-0.4px] text-[#0b2341]`}>Service Selection</p>
+          {/* Figma (Sprint 1 — SCRUM-15): close button returns to Home */}
+          <button
+            type="button"
+            onClick={() => navigate("/home")}
+            aria-label="Close and return to Home"
+            className="flex size-9 cursor-pointer items-center justify-center rounded-full text-[#0b2341] hover:bg-[#f1f5f9]"
+          >
+            <Icon name="close" size={20} />
+          </button>
         </header>
 
         <main className="flex-1 px-5 pt-5 pb-28">
@@ -95,7 +103,7 @@ export default function ServiceSelectionPage() {
             disabled={!pending}
             onClick={onContinue}
             className={`${FONT} flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition-colors ${
-              pending ? "cursor-pointer bg-[#0b2341] text-white" : "cursor-not-allowed bg-[#e2e8f0] text-[#94a3b8]"
+              pending ? "cursor-pointer bg-[#65b3fc] text-white hover:bg-[#3f84c4]" : "cursor-not-allowed bg-[#e2e8f0] text-[#94a3b8]"
             }`}
           >
             Continue <Icon name="arrowRight" size={18} />

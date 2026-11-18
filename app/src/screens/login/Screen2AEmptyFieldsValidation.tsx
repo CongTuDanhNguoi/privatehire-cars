@@ -169,7 +169,7 @@ export default function Screen2AEmptyFieldsValidation() {
                   </div>
                 </div>
               </div>
-              <div className="bg-[#0b2341] content-stretch flex gap-[8.01px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:947" data-name="Primary Submit Button → Button">
+              <div className="bg-[#65b3fc] content-stretch flex gap-[8.01px] items-center justify-center px-[16px] py-[14px] relative rounded-[12px] shrink-0 w-full" data-node-id="6:947" data-name="Primary Submit Button → Button">
                 <div className="absolute bg-[rgba(255,255,255,0)] inset-0 rounded-[12px] shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)]" data-node-id="6:948" data-name="Button:shadow" />
                 <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="6:949" data-name="Container">
                   <div className="[word-break:break-word] flex flex-col font-['Plus_Jakarta_Sans',sans-serif] font-semibold justify-center leading-[0] relative shrink-0 text-[16px] text-center text-white whitespace-nowrap" data-node-id="6:950">

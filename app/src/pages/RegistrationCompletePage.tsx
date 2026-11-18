@@ -40,7 +40,7 @@ export default function RegistrationCompletePage() {
 
         <main className="flex flex-1 flex-col justify-between px-4 pt-8 pb-4">
           <div className="flex flex-col items-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-[#059669] text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex size-16 items-center justify-center rounded-full border-2 border-[#05c1fa] bg-[#def7ff] text-[#05c1fa]">
               <Icon name="check" size={32} strokeWidth={2.5} />
             </div>
             <h2 className={`${FONT} pt-4 text-center text-[22px] leading-8 font-bold text-[#0f172a]`}>
@@ -69,7 +69,7 @@ export default function RegistrationCompletePage() {
               type="button"
               onClick={() => navigate("/login", { replace: true, state: { email } })}
               data-testid="go-to-login"
-              className={`${FONT} flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0b2341] text-[16px] font-semibold text-white hover:bg-[#13335a] transition-colors`}
+              className={`${FONT} flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[16px] font-semibold text-white hover:bg-[#3f84c4] transition-colors`}
             >
               Go to Login <span aria-hidden="true">→</span>
             </button>

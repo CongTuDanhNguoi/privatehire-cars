@@ -502,8 +502,8 @@ export default function VehicleSizePage() {
             data-testid="check-availability-button"
             className={`${FONT} w-full h-[50px] rounded-[12px] font-bold text-[14px] flex items-center justify-center gap-2 transition-all ${
               isContinueEnabled
-                ? "bg-[#0b2341] hover:bg-[#13335a] text-white cursor-pointer drop-shadow-sm"
-                : "bg-[#dbe4ee] text-[#94a3b8] cursor-not-allowed"
+                ? "bg-[#65b3fc] hover:bg-[#3f84c4] text-white cursor-pointer drop-shadow-sm"
+                : "bg-[#e2e8f0] text-[#94a3b8] cursor-not-allowed"
             }`}
           >
             <span>Check Vehicle Availability</span>

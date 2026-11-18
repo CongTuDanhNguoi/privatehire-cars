@@ -244,7 +244,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={submitting}
-              className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0b2341] text-[15px] font-medium text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] disabled:cursor-wait`}
+              className={`${FONT} flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#65b3fc] text-[15px] font-medium text-white shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] disabled:cursor-wait`}
             >
               Create Account <span aria-hidden="true">→</span>
             </button>
