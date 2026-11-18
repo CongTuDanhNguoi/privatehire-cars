@@ -124,8 +124,7 @@ Mật khẩu được băm bcrypt khi nạp dữ liệu, không lưu dạng thô
 
 | Loại | Email | Mật khẩu | Dùng ở |
 |---|---|---|---|
-| Nhân viên | `sarah.collins@privatehire.test` | `Staff@2026` | Staff Portal |
-| Nhân viên | `james.patel@privatehire.test` | `Staff@2026` | Staff Portal |
+| Nhân viên (Admin) | `admin@gmail.com` | `123456` | Staff Portal — tài khoản nhân viên duy nhất |
 | Khách | `alex.morgan@example.com` | `Password123` | App Customer (có 2 chuyến PHC-24051, PHC-24052) |
 | Khách | `emily.clarke@example.com` | `Password123` | App Customer (chuyến PHC-24053) |
 | Khách | `daniel.brooks@example.com` | `Password123` | App Customer (chuyến PHC-24054) |
@@ -369,7 +368,7 @@ Trước buổi demo: `docker compose up -d` → `docker compose exec backend np
 1. App Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → **gõ `localhost:5173/support`** (không có nút trong Profile).
 2. Bấm **Send enquiry** khi để trống → lỗi hiện dưới từng ô.
 3. Chọn **About a trip** → PHC-24051 → nhập tiêu đề + nội dung → gửi → thấy mã **ENQ-000008**.
-4. Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `sarah.collins@privatehire.test / Staff@2026`.
+4. Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `admin@gmail.com / 123456`.
 5. Inbox (lọc Awaiting) → enquiry vừa gửi nằm trên cùng, badge **Trip**, tên Alex.
 6. Lọc General / Trip-specific → danh sách đổi đúng; tìm "child seat" → ra đúng 1 enquiry.
 7. Mở enquiry vừa gửi → thông tin khách + câu hỏi + **Trip details** PHC-24051.

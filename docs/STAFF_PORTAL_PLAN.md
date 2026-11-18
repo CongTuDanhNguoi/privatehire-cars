@@ -70,7 +70,7 @@ Yêu cầu triển khai:
 | D5 | Chế độ test email | **Bật mặc định**: mọi email chuyển về 1 hộp thư của nhóm; giao diện hiện nhãn rõ "Test mode". Tắt đi thì gửi đúng email khách |
 | D6 | Màn gửi Enquiry phía khách | **Thêm màn "Contact Support"** vào app Customer, mở từ trang **Profile** |
 | D7 | Trip-Specific Enquiry | Gắn với **booking mẫu** (seed sẵn trong MySQL). Khách chọn chuyến của mình trong form |
-| D8 | Tài khoản nhân viên | **Seed sẵn 2 tài khoản** (bcrypt). Không có trang quản lý tài khoản, **không phân quyền** |
+| D8 | Tài khoản nhân viên | **Seed sẵn 1 tài khoản Admin** (`admin@gmail.com`, bcrypt; trước đây 2 tài khoản). Không có trang quản lý tài khoản, **không phân quyền** |
 | D9 | Trạng thái | Gửi phản hồi **thành công → tự chuyển Resolved**. Nhân viên **tự đổi được** Awaiting ⇄ Resolved bất cứ lúc nào (kể cả mở lại) |
 | D10 | Môi trường demo | **localhost** (MySQL cài trên máy, chạy bằng `npm run dev`) |
 | D11 | Typography | **Inter** toàn bộ Staff Portal; cỡ chữ theo UI Kit + thêm **28px Bold** chỉ cho tiêu đề trang |
@@ -280,8 +280,7 @@ Mật khẩu băm bằng bcrypt (cost 10) lúc chạy seed, **không** ghi mật
 
 | Họ tên | Email | Mật khẩu |
 |---|---|---|
-| Sarah Collins | `sarah.collins@privatehire.test` | `Staff@2026` |
-| James Patel | `james.patel@privatehire.test` | `Staff@2026` |
+| Admin | `admin@gmail.com` | `123456` |
 
 **Customers** (tài khoản đầu tiên **phải trùng** tài khoản demo hiện có của app Customer):
 
@@ -636,7 +635,7 @@ Mỗi Phase: làm trên nhánh **`feature/staff-portal`** tạo từ `dev`; comm
 1. Mở app Customer (5173) → đăng nhập `alex.morgan@example.com / Password123` → Profile → Contact Support.
 2. Bấm Send khi để trống → lỗi hiện dưới từng ô.
 3. Chọn "About a trip" → chọn PHC-24051 → nhập tiêu đề + nội dung → gửi → thấy mã ENQ.
-4. Mở Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `sarah.collins@privatehire.test / Staff@2026`.
+4. Mở Staff Portal (5174) → đăng nhập sai → báo lỗi → đăng nhập `admin@gmail.com / 123456`.
 5. Inbox (lọc Awaiting) → enquiry vừa gửi nằm trên cùng, badge **Trip**, đúng tên Alex.
 6. Lọc General / Trip → danh sách đổi đúng; tìm "child seat" → ra đúng enquiry.
 7. Mở enquiry vừa gửi → thấy thông tin khách + câu hỏi + **Trip details** đúng PHC-24051.

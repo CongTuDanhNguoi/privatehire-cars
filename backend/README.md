@@ -35,8 +35,7 @@ Tạo `JWT_SECRET` ngẫu nhiên: `node -e "console.log(require('crypto').random
 
 | Loại | Email | Mật khẩu |
 |---|---|---|
-| Staff | `sarah.collins@privatehire.test` | `Staff@2026` |
-| Staff | `james.patel@privatehire.test` | `Staff@2026` |
+| Staff (Admin) | `admin@gmail.com` | `123456` |
 | Customer | `alex.morgan@example.com` | `Password123` |
 | Customer | `emily.clarke@example.com` | `Password123` |
 | Customer | `daniel.brooks@example.com` | `Password123` |
@@ -156,9 +155,9 @@ curl -s $B/health                                                     # {"status
 # ---- Staff ----
 curl -s $J -d '{}' $B/staff/auth/login                                # 400 Email address is required. / Password is required.
 curl -s $J -d '{"email":"sarah@","password":"x"}' $B/staff/auth/login # 400 Enter a valid email address.
-curl -s $J -d '{"email":"sarah.collins@privatehire.test","password":"wrong"}' $B/staff/auth/login   # 401 Incorrect email or password.
-curl -s -c staff.txt $J -d '{"email":"sarah.collins@privatehire.test","password":"Staff@2026"}' $B/staff/auth/login   # 200 + cookie phc_staff
-curl -s -b staff.txt $B/staff/auth/me                                 # 200 Sarah Collins
+curl -s $J -d '{"email":"admin@gmail.com","password":"wrong"}' $B/staff/auth/login   # 401 Incorrect email or password.
+curl -s -c staff.txt $J -d '{"email":"admin@gmail.com","password":"123456"}' $B/staff/auth/login   # 200 + cookie phc_staff
+curl -s -b staff.txt $B/staff/auth/me                                 # 200 Admin
 curl -s -b staff.txt -c staff.txt -X POST $B/staff/auth/logout        # 204
 
 # ---- Customer ----
@@ -177,9 +176,9 @@ curl -s -b staff.txt $B/customer/auth/me                              # 401 (coo
 curl -s -b cust.txt  $B/staff/auth/me                                 # 401 (và ngược lại)
 
 # ---- Khoá đăng nhập: 5 lần sai liên tiếp ----
-for i in 1 2 3 4 5; do curl -s $J -d '{"email":"james.patel@privatehire.test","password":"wrong"}' $B/staff/auth/login; echo; done
+for i in 1 2 3 4 5; do curl -s $J -d '{"email":"admin@gmail.com","password":"wrong"}' $B/staff/auth/login; echo; done
 # lần 1–4: 401 · lần 5: 423 Too many failed attempts. Try again in 15 minutes. (minutesLeft: 15)
-curl -s $J -d '{"email":"james.patel@privatehire.test","password":"Staff@2026"}' $B/staff/auth/login   # vẫn 423 khi đang khoá
+curl -s $J -d '{"email":"admin@gmail.com","password":"123456"}' $B/staff/auth/login   # vẫn 423 khi đang khoá
 ```
 
 Kết quả chạy thật ngày 17/11/2026: tất cả các lệnh trên trả đúng mã HTTP và câu thông báo như chú thích.

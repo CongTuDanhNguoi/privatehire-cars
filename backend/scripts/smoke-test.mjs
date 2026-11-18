@@ -137,8 +137,8 @@ try {
 
   // ===== Staff =====
   const staff = client();
-  r = await staff("POST", "/staff/auth/login", { email: "sarah.collins@privatehire.test", password: "Staff@2026" });
-  check("staff login (Sarah)", r.status === 200);
+  r = await staff("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
+  check("staff login (Admin)", r.status === 200);
 
   r = await alex("GET", "/staff/enquiries");
   check("customer cookie on staff API → 401", r.status === 401);
@@ -203,7 +203,7 @@ try {
   check("send with invalid clientRequestId → 400", r.status === 400);
 
   const reqId = randomUUID();
-  const reply = { clientRequestId: reqId, subject: "Re: [ENQ-000008] Flight number for pickup", body: "Hi Alex,\n\nThanks — we have added BA1234 to your booking.\n\nSarah" };
+  const reply = { clientRequestId: reqId, subject: "Re: [ENQ-000008] Flight number for pickup", body: "Hi Alex,\n\nThanks — we have added BA1234 to your booking.\n\nPrivateHire Cars" };
   r = await staff("POST", `/staff/enquiries/${tripId}/responses`, reply);
   check(
     "send reply → 201 SENT, enquiry auto RESOLVED",
@@ -233,8 +233,8 @@ try {
   check("same status again → 200", r.status === 200);
   r = await staff("GET", `/staff/enquiries/${tripId}`);
   check(
-    "manual change recorded once (MANUAL by Sarah)",
-    r.json.statusHistory.length === 2 && r.json.statusHistory[0].reason === "MANUAL" && r.json.statusHistory[0].changedBy?.fullName === "Sarah Collins",
+    "manual change recorded once (MANUAL by Admin)",
+    r.json.statusHistory.length === 2 && r.json.statusHistory[0].reason === "MANUAL" && r.json.statusHistory[0].changedBy?.fullName === "Admin",
     JSON.stringify(r.json.statusHistory),
   );
   r = await staff("PATCH", `/staff/enquiries/${tripId}/status`, { status: "CLOSED" });
@@ -243,7 +243,7 @@ try {
   // --- failure + retry (MOCK_EMAIL_FAIL=always, then never) ---
   await startServer("always");
   const staff2 = client();
-  await staff2("POST", "/staff/auth/login", { email: "james.patel@privatehire.test", password: "Staff@2026" });
+  await staff2("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
   r = await staff2("POST", `/staff/enquiries/${generalId}/responses`, { clientRequestId: randomUUID(), subject: "Re: Pet friendly rides", body: "Yes, small pets in a carrier are welcome." });
   check(
     "MOCK_EMAIL_FAIL=always → 502 EMAIL_SEND_FAILED, response FAILED saved",
@@ -258,7 +258,7 @@ try {
 
   await startServer("never");
   const staff3 = client();
-  await staff3("POST", "/staff/auth/login", { email: "james.patel@privatehire.test", password: "Staff@2026" });
+  await staff3("POST", "/staff/auth/login", { email: "admin@gmail.com", password: "123456" });
   r = await staff3("POST", `/staff/responses/${failedId}/retry`);
   check(
     "MOCK_EMAIL_FAIL=never → retry 200 SENT, same record, enquiry RESOLVED",
