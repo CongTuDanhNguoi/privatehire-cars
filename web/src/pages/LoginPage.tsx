@@ -109,7 +109,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center bg-surface px-8 py-12">
       <div className="w-[400px]">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <h1 className="text-page font-bold text-ink">Staff Portal</h1>
+          <h1 className="text-page font-bold text-balance text-ink">Staff Portal</h1>
           <p className="text-body text-ink">Sign in to manage customer enquiries</p>
         </div>
 

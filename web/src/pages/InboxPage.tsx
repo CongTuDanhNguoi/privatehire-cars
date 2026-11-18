@@ -91,7 +91,7 @@ export default function InboxPage() {
     <div className="flex flex-col gap-6">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-page font-bold text-ink">Enquiries</h1>
+          <h1 className="text-page font-bold text-balance text-ink">Enquiries</h1>
           <p className="text-body text-ink">
             {counts ? `${counts.awaiting} awaiting · ${counts.resolved} resolved` : "Loading…"}
           </p>

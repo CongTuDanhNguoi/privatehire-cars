@@ -46,7 +46,7 @@ export function InboxTable({ items, loading, captionText }: InboxTableProps) {
         <thead>
           <tr>
             {COLUMNS.map((c) => (
-              <th key={c.label} scope="col" className="border-b border-muted bg-muted/40 px-3 py-3 text-helper font-semibold tracking-wide text-ink uppercase">
+              <th key={c.label} scope="col" className="border-b border-muted bg-muted/40 px-3 py-3 text-helper font-semibold text-ink uppercase">
                 {c.label}
               </th>
             ))}

@@ -30,8 +30,11 @@ export function Segmented<T extends string>({ legend, hideLegend, value, options
             />
             <span
               className={cn(
-                "flex h-9 items-center gap-1.5 rounded-md px-3 text-label font-semibold whitespace-nowrap text-ink",
-                "peer-hover:bg-muted peer-checked:bg-ink peer-checked:text-surface",
+                "flex h-9 items-center gap-1.5 rounded-md border border-transparent px-3 text-label font-semibold whitespace-nowrap text-ink transition-colors duration-150",
+                // Unselected: subtle hover. Selected: the UI Kit primary button (fill primary, stroke, white text,
+                // pressed colour on hover) — hover never overrides the selected fill.
+                "peer-[:not(:checked):hover]:bg-muted/60",
+                "peer-checked:border-primary-stroke peer-checked:bg-primary peer-checked:text-surface peer-[:checked:hover]:bg-primary-pressed",
                 "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary-pressed",
                 "peer-disabled:opacity-60",
               )}

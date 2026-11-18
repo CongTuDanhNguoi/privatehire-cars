@@ -163,7 +163,7 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
             <span className="text-label font-semibold tabular-nums text-ink">{enquiry.code}</span>
             <TypeBadge type={enquiry.type} />
           </div>
-          <h1 className="text-page font-bold break-words text-ink">{enquiry.subject}</h1>
+          <h1 className="text-page font-bold text-balance break-words text-ink">{enquiry.subject}</h1>
           <p className="text-helper text-ink">
             Received <time dateTime={isoDateTime(enquiry.createdAt)}>{formatDateTime(enquiry.createdAt)}</time>
           </p>

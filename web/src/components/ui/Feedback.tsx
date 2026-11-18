@@ -21,7 +21,7 @@ export function EmptyState({ icon = "inbox", title, description, action }: Empty
         <Icon name={icon} size={32} />
       </span>
       <p className="text-heading font-bold text-ink">{title}</p>
-      {description && <p className="max-w-md text-body text-ink">{description}</p>}
+      {description && <p className="max-w-md text-body text-pretty text-ink">{description}</p>}
       {action}
     </div>
   );

@@ -54,7 +54,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, cancelLa
       aria-describedby={description ? descId : undefined}
       className="m-auto w-[440px] max-w-[calc(100vw-32px)] rounded-xl border border-muted bg-surface p-6 text-ink"
     >
-      <h2 id={titleId} className="text-heading font-bold">
+      <h2 id={titleId} className="text-heading font-bold text-balance">
         {title}
       </h2>
       {description && (
