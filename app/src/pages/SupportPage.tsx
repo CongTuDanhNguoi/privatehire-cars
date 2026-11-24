@@ -22,6 +22,7 @@ import {
   type TripSnapshot,
 } from "../validation/enquiryValidation";
 import { validateEmail, validateName } from "../validation/rules";
+import { VEHICLE_LABELS } from "../data/pricing";
 
 const FONT = "font-['Inter',sans-serif]";
 const EMPTY: EnquiryForm = { type: "", bookingId: null, subject: "", message: "", contactName: "", contactEmail: "", contactPhone: "", category: "", tripSnapshot: null };
@@ -115,7 +116,7 @@ function plannedFromContext(ctx: {
     journeyDate: ctx.journeyDate,
     journeyTime: ctx.journeyTime,
     passengerCount: ctx.passengerCount,
-    vehicleSize: ctx.vehicleSize ?? "",
+    vehicleSize: VEHICLE_LABELS[ctx.vehicleSize ?? ""] ?? ctx.vehicleSize ?? "",
   };
   return hasPlannedTrip({ type: "", bookingId: null, subject: "", message: "", tripSnapshot: snapshot }) ? snapshot : null;
 }

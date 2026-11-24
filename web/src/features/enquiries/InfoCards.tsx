@@ -71,6 +71,9 @@ export function EnquiryDetailsCard({ enquiry }: { enquiry: Enquiry }) {
   );
 }
 
+// Enquiries sent before the fix stored the app's vehicle key; show the name for those too.
+const VEHICLE_NAMES: Record<string, string> = { standard: "Standard Car", "seven-seater": "Seven-Seater" };
+
 // Trip the customer planned without a saved booking (SCRUM-95 "Journey Planning").
 export function PlannedTripCard({ trip }: { trip: NonNullable<Enquiry["tripSnapshot"]> }) {
   return (
@@ -82,7 +85,7 @@ export function PlannedTripCard({ trip }: { trip: NonNullable<Enquiry["tripSnaps
           {trip.journeyDate} {trip.journeyTime} <span className="text-helper">(UK time)</span>
         </Row>
         <Row term="Passengers">{trip.passengerCount}</Row>
-        <Row term="Vehicle">{trip.vehicleSize}</Row>
+        <Row term="Vehicle">{VEHICLE_NAMES[trip.vehicleSize] ?? trip.vehicleSize}</Row>
       </dl>
     </Card>
   );

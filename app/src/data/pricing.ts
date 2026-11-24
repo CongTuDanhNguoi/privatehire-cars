@@ -9,6 +9,9 @@ export const ONLINE_DISCOUNT_PERCENT = 15;
 // £95.00 / £135.00. Figma: £135 → giảm £20.25 → còn £114.75.
 export const BASE_FARE_PENCE: Record<string, number> = { "Standard Car": 9500, "Seven-Seater": 13500 };
 
+// App vehicle key → label stored in bookings.vehicle_size (same labels as backend/src/validation/bookings.ts).
+export const VEHICLE_LABELS: Record<string, string> = { standard: "Standard Car", "seven-seater": "Seven-Seater" };
+
 export interface FareQuote {
   basePence: number;
   discountPence: number;

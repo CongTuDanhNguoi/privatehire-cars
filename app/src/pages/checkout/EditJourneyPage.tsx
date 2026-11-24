@@ -11,10 +11,11 @@ import { CARD, CheckoutHeader, Chip, splitPlace } from "../../components/checkou
 import { getCurrentUser } from "../../services/auth";
 import { getBooking, saveTrip, type CheckoutBooking } from "../../services/support";
 import { DESTINATION_SUGGESTIONS, PICKUP_SUGGESTIONS, type MockLocation } from "../../data/locations";
+import { VEHICLE_LABELS } from "../../data/pricing";
 import { validateDestination, validatePickupLocation } from "../../validation/journeyValidation";
 
 // Khóa xe trong bookings.vehicle_size → khóa xe của app (xem backend/src/validation/bookings.ts).
-const VEHICLE_KEY: Record<string, string> = { "Standard Car": "standard", "Seven-Seater": "seven-seater" };
+const VEHICLE_KEY: Record<string, string> = Object.fromEntries(Object.entries(VEHICLE_LABELS).map(([key, label]) => [label, key]));
 
 // Ngày và giờ theo giờ UK (chuyến lưu ở UTC).
 function ukDateAndTime(iso: string): { date: string; time: string } {
