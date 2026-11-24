@@ -4,6 +4,7 @@
 // =============================================================
 import { clearSession, SERVER_UNAVAILABLE_MESSAGE } from "./auth";
 import type { EnquiryErrors, EnquiryType } from "../validation/enquiryValidation";
+import type { FareQuote } from "../data/pricing";
 
 export interface Booking {
   id: number;
@@ -74,6 +75,21 @@ export const saveTrip = (body: {
   passengerCount: number;
   vehicleSize: string; // "standard" | "seven-seater"
 }) => call<{ booking: Booking }>("/bookings", { method: "POST", body });
+
+// Checkout (SCRUM-72…90): one saved trip, and the simulated payment for it.
+export interface CheckoutBooking extends Booking {
+  status: "SAVED" | "PAID";
+  fare: FareQuote;
+  notifyPhone: string | null;
+  paymentRef: string | null;
+  paidAt: string | null;
+  cardLast4: string | null;
+  customerPhone: string | null;
+}
+
+export const getBooking = (ref: string) => call<{ booking: CheckoutBooking }>(`/bookings/${encodeURIComponent(ref)}`);
+export const payBooking = (ref: string, phone: string) =>
+  call<{ booking: CheckoutBooking; emailSent: boolean }>(`/bookings/${encodeURIComponent(ref)}/pay`, { method: "POST", body: { phone } });
 
 // Giờ chuyến xe là giờ UK: hiển thị đúng giờ London dù máy đang ở múi giờ nào.
 export function formatUkDateTime(iso: string): string {
