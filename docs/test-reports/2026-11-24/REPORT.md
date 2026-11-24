@@ -134,6 +134,6 @@ Kiểm tra lại sau khi sửa: typecheck app/backend/web = 0, unit PASS, smoke 
 **Kiểm tra cuối:** typecheck app/backend = 0; test-checkout 10/10; scrum16 21/21, scrum17 15/15, scrum18 21/21; không có dòng `data-testid` nào bị xoá.
 
 ## 11. Sửa E2E-11 (2026-11-25)
-- Đổi selector sang `button[data-node-id="6:1619"]` (commit <hash>).
+- Đổi selector sang `button[data-node-id="6:1619"]` (commit 6700742).
 - test-final-acceptance: TOTAL E2E AUDIT TESTS: 13 | PASSED: 13 | FAILED: 0 · test-scrum12: TOTAL SCRUM-12 TESTS: 9 | PASSED: 9 | FAILED: 0.
 - Lỗi phát sinh: không có.
