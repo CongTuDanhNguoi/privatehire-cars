@@ -1,6 +1,6 @@
 // Left column of the enquiry detail: customer, the question itself, and the trip (TRIP enquiries only).
 import type { ReactNode } from "react";
-import type { Booking, EnquiryDetail } from "../../types";
+import type { Booking, Enquiry, EnquiryDetail } from "../../types";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { CopyButton } from "../../components/ui/CopyButton";
@@ -52,6 +52,38 @@ export function EnquiryCard({ message, createdAt, customerName }: { message: str
           </p>
         </div>
       </div>
+    </Card>
+  );
+}
+
+// Contact details and category from the SCRUM-95 form. Renders nothing for older enquiries.
+export function EnquiryDetailsCard({ enquiry }: { enquiry: Enquiry }) {
+  if (!enquiry.category && !enquiry.contactName && !enquiry.contactEmail && !enquiry.contactPhone) return null;
+  return (
+    <Card title="Enquiry details">
+      <dl className="m-0">
+        {enquiry.category && <Row term="Category">{enquiry.category}</Row>}
+        {enquiry.contactName && <Row term="Contact name">{enquiry.contactName}</Row>}
+        {enquiry.contactEmail && <Row term="Contact email">{enquiry.contactEmail}</Row>}
+        {enquiry.contactPhone && <Row term="Contact phone">{enquiry.contactPhone}</Row>}
+      </dl>
+    </Card>
+  );
+}
+
+// Trip the customer planned without a saved booking (SCRUM-95 "Journey Planning").
+export function PlannedTripCard({ trip }: { trip: NonNullable<Enquiry["tripSnapshot"]> }) {
+  return (
+    <Card title="Planned trip">
+      <dl className="m-0">
+        <Row term="Pickup">{trip.pickupLocation}</Row>
+        <Row term="Destination">{trip.destination}</Row>
+        <Row term="Date & time">
+          {trip.journeyDate} {trip.journeyTime} <span className="text-helper">(UK time)</span>
+        </Row>
+        <Row term="Passengers">{trip.passengerCount}</Row>
+        <Row term="Vehicle">{trip.vehicleSize}</Row>
+      </dl>
     </Card>
   );
 }

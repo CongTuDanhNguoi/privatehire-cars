@@ -73,6 +73,11 @@ CREATE TABLE enquiries (
   subject     VARCHAR(120)  NOT NULL,
   message     VARCHAR(2000) NOT NULL,
   status      ENUM('AWAITING','RESOLVED') NOT NULL DEFAULT 'AWAITING',
+  contact_name  VARCHAR(100) NULL,                       -- SCRUM-95 form fields (NULL for older enquiries)
+  contact_email VARCHAR(254) NULL,
+  contact_phone VARCHAR(30)  NULL,
+  category      VARCHAR(80)  NULL,
+  trip_snapshot JSON         NULL,                       -- planned trip when there is no saved booking
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id),

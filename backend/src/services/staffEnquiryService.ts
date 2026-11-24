@@ -4,7 +4,7 @@ import { pool } from "../db.js";
 import { AppError } from "../errors.js";
 import type { ListEnquiriesQuery } from "../validation/enquiries.js";
 import { enquiryCode } from "../validation/reply.js";
-import { toBooking } from "./customerEnquiryService.js";
+import { ensureEnquiryContactColumns, toBooking } from "./customerEnquiryService.js";
 
 export type EnquiryStatus = "AWAITING" | "RESOLVED";
 
@@ -136,8 +136,10 @@ export async function listEnquiries(q: ListEnquiriesQuery) {
 
 // ---------- detail ----------
 export async function getEnquiryDetail(id: number) {
+  await ensureEnquiryContactColumns();
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT e.id, e.type, e.subject, e.message, e.status, e.created_at, e.updated_at,
+            e.contact_name, e.contact_email, e.contact_phone, e.category, e.trip_snapshot,
             c.id AS c_id, c.full_name AS c_name, c.email AS c_email, c.phone AS c_phone,
             b.id AS b_id
      FROM enquiries e JOIN customers c ON c.id = e.customer_id LEFT JOIN bookings b ON b.id = e.booking_id
@@ -165,8 +167,16 @@ export async function getEnquiryDetail(id: number) {
     [id],
   );
 
+  const snapshot = row.trip_snapshot as unknown;
   return {
-    enquiry: toEnquiry(row),
+    enquiry: {
+      ...toEnquiry(row),
+      contactName: (row.contact_name as string | null) ?? null,
+      contactEmail: (row.contact_email as string | null) ?? null,
+      contactPhone: (row.contact_phone as string | null) ?? null,
+      category: (row.category as string | null) ?? null,
+      tripSnapshot: snapshot == null ? null : typeof snapshot === "string" ? JSON.parse(snapshot) : snapshot,
+    },
     customer: { id: row.c_id as number, fullName: row.c_name as string, email: row.c_email as string, phone: (row.c_phone as string | null) ?? null },
     booking,
     responses: responses.map(toResponse),

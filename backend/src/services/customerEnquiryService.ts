@@ -7,6 +7,28 @@ import { validationError } from "../errors.js";
 import { ENQUIRY_MESSAGES, validateEnquiry, type EnquiryForm } from "../../../app/src/validation/enquiryValidation";
 import { enquiryCode } from "../validation/reply.js";
 import { VEHICLES, type CreateBookingBody } from "../validation/bookings.js";
+import { validateEnquiryContact } from "../../../app/src/validation/enquiryValidation";
+import { normalizePhone } from "../../../app/src/validation/checkoutValidation";
+
+// Databases created before SCRUM-95 (e.g. production) get the enquiry contact columns on first use.
+let enquiryColumnsReady: Promise<unknown> | null = null;
+export const ensureEnquiryContactColumns = () =>
+  (enquiryColumnsReady ??= (async () => {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS n FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enquiries' AND COLUMN_NAME = 'category'",
+    );
+    if (Number(rows[0].n) === 0) {
+      await pool.query(`ALTER TABLE enquiries
+        ADD COLUMN contact_name VARCHAR(100) NULL,
+        ADD COLUMN contact_email VARCHAR(254) NULL,
+        ADD COLUMN contact_phone VARCHAR(30) NULL,
+        ADD COLUMN category VARCHAR(80) NULL,
+        ADD COLUMN trip_snapshot JSON NULL`);
+    }
+  })().catch((err) => {
+    enquiryColumnsReady = null;
+    throw err;
+  }));
 
 export interface Booking {
   id: number;
@@ -109,13 +131,15 @@ export async function createCustomerBooking(customerId: number, b: CreateBooking
 }
 
 export async function createEnquiry(customerId: number, form: EnquiryForm) {
-  const errors = validateEnquiry(form);
+  await ensureEnquiryContactColumns();
+  const hasContact = form.contactName !== undefined || form.contactEmail !== undefined || form.category !== undefined;
+  const errors = { ...validateEnquiry(form), ...(hasContact ? validateEnquiryContact(form) : {}) };
   if (Object.keys(errors).length > 0) throw validationError(errors);
 
   const type = form.type as "GENERAL" | "TRIP";
-  // GENERAL enquiries are never linked to a booking; TRIP ones must use the customer's own booking.
-  const bookingId = type === "TRIP" ? form.bookingId : null;
-  if (type === "TRIP") {
+  // GENERAL enquiries are never linked to a booking. TRIP ones use the customer's own saved booking, or a planned trip.
+  const bookingId = type === "TRIP" && form.bookingId ? form.bookingId : null;
+  if (bookingId !== null) {
     const [own] = await pool.execute<RowDataPacket[]>("SELECT 1 FROM bookings WHERE id = ? AND customer_id = ?", [
       bookingId,
       customerId,
@@ -124,8 +148,20 @@ export async function createEnquiry(customerId: number, form: EnquiryForm) {
   }
 
   const [r] = await pool.execute<ResultSetHeader>(
-    "INSERT INTO enquiries (customer_id, type, booking_id, subject, message) VALUES (?, ?, ?, ?, ?)",
-    [customerId, type, bookingId, form.subject.trim(), form.message.trim()],
+    `INSERT INTO enquiries (customer_id, type, booking_id, subject, message, contact_name, contact_email, contact_phone, category, trip_snapshot)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      customerId,
+      type,
+      bookingId,
+      form.subject.trim(),
+      form.message.trim(),
+      form.contactName?.trim() || null,
+      form.contactEmail?.trim() || null,
+      form.contactPhone?.trim() ? normalizePhone(form.contactPhone) : null,
+      form.category?.trim() || null,
+      type === "TRIP" && bookingId === null && form.tripSnapshot ? JSON.stringify(form.tripSnapshot) : null,
+    ],
   );
   const [rows] = await pool.execute<RowDataPacket[]>("SELECT status, created_at FROM enquiries WHERE id = ?", [r.insertId]);
   return { id: r.insertId, code: enquiryCode(r.insertId), status: rows[0].status as string, createdAt: rows[0].created_at as Date };

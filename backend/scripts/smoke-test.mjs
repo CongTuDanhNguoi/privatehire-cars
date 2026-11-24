@@ -415,6 +415,32 @@ try {
   check("after reset: old password rejected", r.status === 401);
   r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "NewPass2026" });
   check("after reset: new password logs in (lockout cleared)", r.status === 200 && r.json.user?.email === danielEmail, JSON.stringify(r.json));
+  // ===== Enquiry: planned trip + contact details (SCRUM-95) =====
+  const planned = {
+    type: "TRIP",
+    bookingId: null,
+    subject: "Route Planning & Waiting Time",
+    message: "Request extra 15m waiting time at Piccadilly due to expected inbound rail congestion.",
+    category: "Route Planning & Waiting Time",
+    contactName: "Alex Morgan",
+    contactEmail: "alex.morgan@example.com",
+    contactPhone: "+44 7700 900123",
+    tripSnapshot: { pickupLocation: "Manchester Piccadilly, M1 2PB", destination: "Manchester Airport T2, M90 4FP", journeyDate: "2027-07-10", journeyTime: "09:00", passengerCount: 3, vehicleSize: "Seven-Seater" },
+  };
+  r = await alex("POST", "/customer/enquiries", { ...planned, contactName: "" });
+  check("contact: empty full name → 400 with drawn message", r.status === 400 && r.json.error.fields?.contactName === "Full name is required", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/enquiries", { ...planned, category: "" });
+  check("contact: no category → 400", r.status === 400 && r.json.error.fields?.category === "Please select an enquiry category", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/enquiries", planned);
+  check("planned trip (no saved booking) → 201", r.status === 201 && /^ENQ-\d{6}$/.test(r.json.enquiry?.code ?? ""), JSON.stringify(r.json));
+  const plannedId = r.json.enquiry?.id;
+  r = await staff("GET", `/staff/enquiries/${plannedId}`);
+  check(
+    "staff detail shows contact, category and planned trip",
+    r.status === 200 && r.json.enquiry.category === "Route Planning & Waiting Time" && r.json.enquiry.contactEmail === "alex.morgan@example.com" && r.json.enquiry.tripSnapshot?.pickupLocation === "Manchester Piccadilly, M1 2PB" && r.json.booking === null,
+    JSON.stringify(r.json),
+  );
+
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);

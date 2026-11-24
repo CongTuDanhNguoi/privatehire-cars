@@ -8,6 +8,21 @@ export const CreateEnquiryBody = z.object({
   bookingId: z.union([z.number(), z.null()]).optional().default(null),
   subject: text,
   message: text,
+  contactName: z.string().optional(),
+  contactEmail: z.string().optional(),
+  contactPhone: z.string().optional(),
+  category: z.string().optional(),
+  tripSnapshot: z
+    .object({
+      pickupLocation: text,
+      destination: text,
+      journeyDate: text,
+      journeyTime: text,
+      passengerCount: z.number().int().default(0),
+      vehicleSize: text,
+    })
+    .nullable()
+    .optional(),
 });
 
 export const ListEnquiriesQuery = z.object({

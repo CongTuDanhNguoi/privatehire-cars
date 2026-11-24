@@ -47,6 +47,19 @@ export interface Enquiry {
   status: EnquiryStatus;
   createdAt: string;
   updatedAt: string;
+  // SCRUM-95 enquiry form (null for older enquiries)
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  category?: string | null;
+  tripSnapshot?: {
+    pickupLocation: string;
+    destination: string;
+    journeyDate: string;
+    journeyTime: string;
+    passengerCount: number;
+    vehicleSize: string;
+  } | null;
 }
 
 export interface Booking {
