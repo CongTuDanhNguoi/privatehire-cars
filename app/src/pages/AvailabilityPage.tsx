@@ -3,7 +3,7 @@
 //   "1. Checking Vehicle Availability", "03. Vehicles Available", "1A. Vehicle Unavailable".
 // Một trang, 3 trạng thái: CHECKING → AVAILABLE hoặc UNAVAILABLE (quy tắc mô phỏng trong
 // src/validation/availabilityRules — theo ngày/giờ, loại xe, số khách). Không tạo booking / thanh toán:
-// nút "Proceed to Booking & Payment" của thiết kế được bỏ theo tiêu chí AC-15.
+// nút "View Price" mở Price Review (SCRUM-72). AC-15 đã được bỏ theo yêu cầu của nhóm.
 // Thông tin tài xế / biển số là nội dung mẫu của thiết kế. Giữ mọi data-testid các bài test dùng.
 // =============================================================
 import { useEffect, useState, type ReactNode } from "react";
@@ -47,6 +47,8 @@ export default function AvailabilityPage() {
     return "CHECKING";
   });
   const [bannerOpen, setBannerOpen] = useState(true);
+  // Mã chuyến đã lưu (PHC-…) để mở màn Price Review (SCRUM-72). Chỉ có khi xe còn trống.
+  const [savedRef, setSavedRef] = useState<string | null>(null);
 
   // Mô phỏng kiểm tra (600 ms để thấy rõ trạng thái đang kiểm tra)
   useEffect(() => {
@@ -63,7 +65,9 @@ export default function AvailabilityPage() {
   const serviceName = selectedService?.title;
   useEffect(() => {
     if (status !== "AVAILABLE" || !serviceName || !pickupLocation || !destination || !journeyDate || !journeyTime || !vehicleSize) return;
-    void saveTrip({ serviceName, pickupLocation, destination, journeyDate, journeyTime, passengerCount, vehicleSize });
+    void saveTrip({ serviceName, pickupLocation, destination, journeyDate, journeyTime, passengerCount, vehicleSize }).then((r) => {
+      if (r.ok) setSavedRef(r.data.booking.bookingRef);
+    });
   }, [status, serviceName, pickupLocation, destination, journeyDate, journeyTime, passengerCount, vehicleSize]);
 
   // Điều kiện vào trang (sau khi khai báo hook)
@@ -288,6 +292,9 @@ export default function AvailabilityPage() {
                   </span>
                 </div>
 
+                <p className="mt-3 flex items-center gap-2 text-[13px] text-[#334155]">
+                  <span className="size-2 rounded-full bg-[#0b4a8b]" aria-hidden="true" /> Fleet inventory active: <strong className="text-[#0b2341]">3 vehicles ready for slot</strong>
+                </p>
                 <div className="mt-3 rounded-xl bg-[#eef3fb] p-3">
                   <div className="relative flex h-[150px] items-center justify-center rounded-lg bg-white">
                     <img src={isVan ? vanPhoto : standardPhoto} alt={isVan ? "Mercedes-Benz V-Class" : "Mercedes E-Class"} className="h-[120px] object-contain" />
@@ -390,6 +397,25 @@ export default function AvailabilityPage() {
                   <Icon name="repeat" size={15} /> Change Vehicle Size
                 </button>
               </div>
+              <section className={`${CARD} flex items-center justify-between gap-3 p-4`}>
+                <div>
+                  <p className="text-[11px] font-semibold tracking-[0.5px] text-[#64748b] uppercase">Indicative rate</p>
+                  <p className="text-[20px] font-bold text-[#0b2341]">£XX.XX</p>
+                </div>
+                <span className="rounded-full bg-[#fee2e2] px-2.5 py-1 text-[12px] font-semibold text-[#b91c1c]">15% Promo Eligible</span>
+              </section>
+              <button
+                type="button"
+                data-testid="view-price"
+                disabled={!savedRef}
+                onClick={() => savedRef && navigate(`/checkout/${savedRef}/price`)}
+                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#0284c7] text-[16px] font-semibold text-white disabled:cursor-wait disabled:bg-[#e2e8f0] disabled:text-[#94a3b8]"
+              >
+                View Price <Icon name="arrowRight" size={16} />
+              </button>
+              <button type="button" onClick={() => navigate("/home")} className="mx-auto cursor-pointer text-[14px] font-medium text-[#334155] hover:underline">
+                Cancel
+              </button>
               <button type="button" data-testid="back-to-journey-link" onClick={toJourney} className="mx-auto flex cursor-pointer items-center gap-1.5 text-[14px] font-medium text-[#334155] hover:underline">
                 <Icon name="arrowLeft" size={15} /> Back to Journey Details
               </button>
