@@ -12,6 +12,7 @@
 //   /profile             My Profile         (BẮT BUỘC đăng nhập)
 //   /support             Contact Support    (BẮT BUỘC đăng nhập; không có link ở màn cũ, gõ đường dẫn)
 //   /checkout/:ref/price Price Review       (BẮT BUỘC đăng nhập; SCRUM-72)
+//   /checkout/:ref/edit  Edit Journey 05A   (BẮT BUỘC đăng nhập; SCRUM-72)
 //   /gallery             Xem các màn Figma tĩnh (không thuộc luồng chính)
 // =============================================================
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -23,6 +24,7 @@ import RegistrationCompletePage from "./pages/RegistrationCompletePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import { ChangePasswordPage, ForgotPasswordPage, PasswordChangedPage, VerifyResetCodePage } from "./pages/ForgotPasswordPages";
 import PriceReviewPage from "./pages/checkout/PriceReviewPage";
+import EditJourneyPage from "./pages/checkout/EditJourneyPage";
 import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
@@ -53,6 +55,7 @@ export default function App() {
       <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
       <Route path="/support" element={<RequireAuth><SupportPage /></RequireAuth>} />
       <Route path="/checkout/:ref/price" element={<RequireAuth><PriceReviewPage /></RequireAuth>} />
+      <Route path="/checkout/:ref/edit" element={<RequireAuth><EditJourneyPage /></RequireAuth>} />
 
       <Route path="/gallery" element={<GalleryIndex />} />
       <Route path="/gallery/:slug" element={<GalleryScreen />} />
