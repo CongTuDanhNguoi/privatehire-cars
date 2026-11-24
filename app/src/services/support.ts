@@ -3,7 +3,7 @@
 // Nhân viên xem và trả lời trong Staff Portal.
 // =============================================================
 import { clearSession, SERVER_UNAVAILABLE_MESSAGE } from "./auth";
-import type { EnquiryErrors, EnquiryType } from "../validation/enquiryValidation";
+import type { EnquiryErrors, EnquiryType, TripSnapshot } from "../validation/enquiryValidation";
 import type { FareQuote } from "../data/pricing";
 
 export interface Booking {
@@ -62,8 +62,17 @@ async function call<T>(path: string, init: { method?: "GET" | "POST"; body?: unk
 
 export const listMyBookings = () => call<{ bookings: Booking[] }>("/bookings");
 export const listMyEnquiries = () => call<{ enquiries: MyEnquiry[] }>("/enquiries");
-export const sendEnquiry = (body: { type: EnquiryType; bookingId: number | null; subject: string; message: string }) =>
-  call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
+export const sendEnquiry = (body: {
+  type: EnquiryType;
+  bookingId: number | null;
+  subject: string;
+  message: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  category?: string;
+  tripSnapshot?: TripSnapshot | null;
+}) => call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
 
 // Lưu chuyến khi xe còn trống (không có màn Booking/Payment — AC-15). Gửi lại cùng chuyến thì server trả chuyến cũ.
 export const saveTrip = (body: {
