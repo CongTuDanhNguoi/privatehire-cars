@@ -55,6 +55,12 @@ CREATE TABLE bookings (
   journey_datetime DATETIME     NOT NULL,
   passenger_count  TINYINT UNSIGNED NOT NULL,
   vehicle_size     VARCHAR(40)  NOT NULL,           -- e.g. 'Seven-Seater'
+  status           ENUM('SAVED','PAID') NOT NULL DEFAULT 'SAVED',
+  fare_pence       INT UNSIGNED NULL,               -- total paid in pence, frozen at payment
+  discount_pence   INT UNSIGNED NULL,               -- online discount in pence, frozen at payment
+  notify_phone     VARCHAR(30)  NULL,
+  payment_ref      VARCHAR(20)  NULL,               -- e.g. TXN-48213
+  paid_at          DATETIME     NULL,               -- UTC
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

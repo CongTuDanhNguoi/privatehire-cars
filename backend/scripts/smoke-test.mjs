@@ -112,6 +112,7 @@ try {
     JSON.stringify(r.json),
   );
   const savedTripId = r.json.booking?.id;
+  const savedTripRef = r.json.booking?.bookingRef;
   r = await alex("POST", "/customer/bookings", trip);
   check("save same trip again → 200, no duplicate", r.status === 200 && r.json.booking.id === savedTripId, JSON.stringify(r.json));
   r = await alex("POST", "/customer/bookings", { ...trip, journeyDate: "2027-12-01", journeyTime: "14:30" });
@@ -124,6 +125,25 @@ try {
   check("save trip without cookie → 401", r.status === 401);
   r = await emily("GET", "/customer/bookings");
   check("saved trip not visible to another customer", !r.json.bookings.some((b) => b.id === savedTripId));
+
+  // Checkout: the saved trip is Standard Car (£95 less 15 % = £80.75).
+  r = await alex("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: GET own booking → SAVED with live quote", r.status === 200 && r.json.booking.status === "SAVED" && r.json.booking.fare.totalPence === 8075, JSON.stringify(r.json));
+  r = await emily("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: other customer's booking → 404", r.status === 404);
+  r = await alex("GET", "/customer/bookings/PHC-00000");
+  check("checkout: unknown ref → 404", r.status === 404);
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 ABC89" });
+  check("checkout: bad phone → 400 phone", r.status === 400 && r.json.error.fields?.phone === "Check telephone number format (e.g. +44 7...).", JSON.stringify(r.json));
+  r = await emily("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  check("checkout: pay someone else's booking → 404", r.status === 404);
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  const paid = r.json.booking;
+  check("checkout: pay → PAID, TXN ref, fare frozen", r.status === 200 && paid.status === "PAID" && /^TXN-\d{5}$/.test(paid.paymentRef) && paid.fare.totalPence === 8075 && paid.fare.basePence - paid.fare.discountPence === 8075, JSON.stringify(r.json));
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  check("checkout: pay again → same paymentRef, no second email", r.status === 200 && r.json.booking.paymentRef === paid.paymentRef && r.json.emailSent === false, JSON.stringify(r.json));
+  r = await alex("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: after pay → GET shows PAID", r.status === 200 && r.json.booking.status === "PAID", JSON.stringify(r.json));
 
   r = await alex("POST", "/customer/enquiries", { type: "TRIP", bookingId: emilyBooking.id, subject: "Someone else's trip", message: "This booking belongs to another customer, it must be rejected." });
   check("TRIP enquiry with another customer's booking → 400", r.status === 400 && r.json.error.fields?.bookingId === "Choose the trip this enquiry is about.", JSON.stringify(r.json));
