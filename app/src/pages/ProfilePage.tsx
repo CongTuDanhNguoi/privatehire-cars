@@ -122,6 +122,27 @@ export default function ProfilePage() {
             ))}
           </ul>
 
+          {/* SCRUM-95: mở form gửi câu hỏi (Enquiries & Support) */}
+          <button
+            type="button"
+            data-testid="profile-enquiries"
+            onClick={() => navigate("/support")}
+            className="mt-4 flex w-full cursor-pointer items-center gap-3 rounded-2xl border-2 border-[#05c1fa] bg-white p-4 text-left shadow-[0px_1px_3px_rgba(15,23,42,0.06)]"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#05c1fa] text-white">
+              <Icon name="message" size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-[#0b2341]">
+                Enquiries &amp; Support <span className="ml-1 inline-block size-2 rounded-full bg-[#05c1fa] align-middle" aria-hidden="true" />
+              </span>
+              <span className="block text-[12.5px] leading-4 text-[#475569]">Ask questions about our services or your trip</span>
+            </span>
+            <span className="shrink-0 text-[#94a3b8]">
+              <Icon name="chevronRight" size={18} />
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={onLogout}

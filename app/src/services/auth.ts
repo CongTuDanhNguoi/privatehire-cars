@@ -161,6 +161,46 @@ export async function resendVerificationCode(email: string): Promise<ResendCodeR
   return { ok: false, error: err.message ?? SERVER_UNAVAILABLE_MESSAGE, retryAfterSeconds: err.retryAfterSeconds };
 }
 
+// ---------- quên mật khẩu (SCRUM-65): email → mã 4 số → mật khẩu mới ----------
+// Server trả lời giống nhau dù email có tài khoản hay không (không lộ email nào đã đăng ký).
+export type ForgotPasswordResult =
+  | { ok: true; sentTo: string; resendInSeconds: number }
+  | { ok: false; error: string; field?: "email"; retryAfterSeconds?: number };
+
+export async function requestPasswordReset(email: string): Promise<ForgotPasswordResult> {
+  const { status, data } = await call("/auth/forgot-password", { method: "POST", body: { email } });
+  const reset = data?.reset as { sentTo: string; resendInSeconds: number } | undefined;
+  if (status === 200 && reset) return { ok: true, sentTo: reset.sentTo, resendInSeconds: reset.resendInSeconds };
+  if (status === 0) return { ok: false, error: SERVER_UNAVAILABLE_MESSAGE };
+  const err = errorOf(data);
+  if (err.fields?.email) return { ok: false, error: err.fields.email, field: "email" };
+  return { ok: false, error: err.message ?? SERVER_UNAVAILABLE_MESSAGE, retryAfterSeconds: err.retryAfterSeconds };
+}
+
+export async function verifyResetCode(email: string, code: string): Promise<{ ok: true; resetToken: string } | { ok: false; error: string }> {
+  const { status, data } = await call("/auth/verify-reset-code", { method: "POST", body: { email, code } });
+  if (status === 200 && typeof data?.resetToken === "string") return { ok: true, resetToken: data.resetToken };
+  if (status === 0) return { ok: false, error: SERVER_UNAVAILABLE_MESSAGE };
+  const err = errorOf(data);
+  return { ok: false, error: err.fields?.code ?? err.message ?? SERVER_UNAVAILABLE_MESSAGE };
+}
+
+export type ResetPasswordResult =
+  | { ok: true }
+  | { ok: false; errors: { password?: string; confirmPassword?: string }; expired?: boolean; error?: string };
+
+export async function resetPassword(body: { email: string; resetToken: string; password: string; confirmPassword: string }): Promise<ResetPasswordResult> {
+  const { status, data } = await call("/auth/reset-password", { method: "POST", body });
+  if (status === 200) return { ok: true };
+  if (status === 0) return { ok: false, errors: {}, error: SERVER_UNAVAILABLE_MESSAGE };
+  const err = errorOf(data);
+  if (err.fields?.resetToken) return { ok: false, errors: {}, expired: true, error: err.fields.resetToken };
+  if (err.fields?.password || err.fields?.confirmPassword) {
+    return { ok: false, errors: { password: err.fields.password, confirmPassword: err.fields.confirmPassword } };
+  }
+  return { ok: false, errors: {}, error: err.message ?? SERVER_UNAVAILABLE_MESSAGE };
+}
+
 // ---------- đăng nhập ----------
 export async function loginUser(email: string, password: string): Promise<LoginResult> {
   const { status, data } = await call("/auth/login", { method: "POST", body: { email, password } });

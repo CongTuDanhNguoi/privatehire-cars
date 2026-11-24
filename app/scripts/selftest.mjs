@@ -293,13 +293,36 @@ await test("AC-14", "Register thành công → nhập OTP → Registration Compl
   return `Mã OTP sai bị chặn, mã đúng → Complete; đăng ký không tự đăng nhập; đăng nhập lại → Home, Profile hiện ${NEW_EMAIL}`;
 });
 
-await test("AC-15", "Không có màn Booking Confirmation / Payment", "Kiểm tra danh sách route", async () => {
-  for (const p of ["/confirmation", "/payment", "/booking"]) {
-    await page.goto(BASE + p);
-    await wait(200);
-    expect(!pathname().startsWith(p), `Có route ${p}`);
-  }
-  return "Không có route confirmation / payment / booking";
+// AC-15 (đã đổi theo yêu cầu của nhóm): luồng checkout giả lập — giá → số điện thoại → thanh toán → biên lai.
+// Ngày chuyến theo thời điểm chạy để chạy lại được (chuyến trùng sẽ trả về chuyến đã thanh toán).
+await test("AC-15", "Checkout: Price → Thanh toán giả lập → Biên lai", "Chuyến đã lưu → giá → số điện thoại → thanh toán → biên lai", async () => {
+  const stamp = Date.now();
+  const saved = await page.request.post(`${BASE}/api/customer/bookings`, {
+    data: {
+      serviceName: "Airport Transfer",
+      pickupLocation: "Manchester Piccadilly Station, M1 2PB",
+      destination: "Manchester Airport Terminal 2, M90 4FP",
+      journeyDate: `2028-${String((stamp % 12) + 1).padStart(2, "0")}-${String((Math.floor(stamp / 12) % 28) + 1).padStart(2, "0")}`,
+      journeyTime: `10:${String(stamp % 60).padStart(2, "0")}`,
+      passengerCount: 3,
+      vehicleSize: "seven-seater",
+    },
+  });
+  expect(saved.ok(), `Không lưu được chuyến (HTTP ${saved.status()})`);
+  const ref = (await saved.json()).booking.bookingRef;
+  await page.goto(`${BASE}/checkout/${ref}/price`);
+  await page.waitForSelector('[data-testid="fare-total"]');
+  expect((await page.textContent('[data-testid="fare-total"]')) === "£114.75", "Giá không phải £114.75");
+  await page.check('[data-testid="agree-fare"]');
+  await page.click('[data-testid="continue-to-payment"]');
+  await page.click('[data-testid="notify-next"]');
+  await page.fill("#notifyPhone", "+44 7700 900123");
+  await page.click('[data-testid="notify-pay"]');
+  await page.waitForURL(`**/checkout/${ref}/success`);
+  expect((await page.textContent('[data-testid="payment-ref"]')).startsWith("TXN-"), "Thiếu mã giao dịch");
+  await page.click('[data-testid="view-receipt"]');
+  await page.waitForSelector('[data-testid="receipt-total"]');
+  return `Thanh toán ${ref} → biên lai £114.75`;
 });
 
 await browser.close();

@@ -94,6 +94,18 @@ if (browser) {
   const auditEmail = `audit_user_${Date.now()}@example.co.uk`;
   const auditPassword = "Password123!";
 
+  // Luồng AC-14: sau Create Account phải nhập mã OTP. Email thử không nhận được thư thật,
+  // backend MOCK giữ mã ở /api/dev (giống selftest.mjs).
+  async function enterOtp(email) {
+    await page.waitForURL("**/verify-email", { timeout: 5000 });
+    const res = await page.request.get(`${BASE_URL}/api/dev/last-verification-code?email=${encodeURIComponent(email)}`);
+    assert(res.ok(), `Cannot read the OTP (HTTP ${res.status()})`);
+    const { code } = await res.json();
+    await page.fill("#code", code);
+    await page.click('[data-testid="verify-code"]');
+    await wait(800);
+  }
+
   await test("E2E-01", "Register -> Login -> Home flow", async () => {
     await page.goto(`${BASE_URL}/register`);
     await wait(200);
@@ -113,6 +125,7 @@ if (browser) {
     await page.click("button[type=submit]");
     await wait(400);
 
+    await enterOtp(auditEmail);
     assert(new URL(page.url()).pathname === "/register/complete", "Expected /register/complete");
     const displayedEmail = await page.textContent('[data-testid="registered-email"]');
     assert(displayedEmail.includes(auditEmail), "Registered email mismatch on success screen");
@@ -370,7 +383,7 @@ if (browser) {
     assert(timeVal === "10:00", "Time lost on back navigation");
 
     // Back from Journey to Services
-    await page.click('button[aria-label="Go Back to Service Selection"]');
+    await page.click('button[data-node-id="6:1619"]');
     await wait(200);
     assert(new URL(page.url()).pathname === "/services", "Expected /services");
     const isServiceActive = (await page.getAttribute('[data-testid="service-airport-transfer"]', "aria-checked")) === "true";

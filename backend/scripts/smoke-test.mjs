@@ -103,6 +103,48 @@ try {
   const alexBooking = r.json.bookings.find((b) => b.bookingRef === "PHC-24051");
   const emilyBooking = (await emily("GET", "/customer/bookings")).json.bookings[0];
 
+  // Trip saved automatically from the Availability screen (UK time → stored as UTC).
+  const trip = { serviceName: "Hotel Transfer", pickupLocation: "The Lowry Hotel, M3 5LH", destination: "Manchester Airport Terminal 2, M90 4FF", journeyDate: "2027-07-10", journeyTime: "09:00", passengerCount: 3, vehicleSize: "standard" };
+  r = await alex("POST", "/customer/bookings", trip);
+  check(
+    "save trip → 201 PHC-ref, BST 09:00 stored as 08:00Z, Standard Car",
+    r.status === 201 && /^PHC-\d{5}$/.test(r.json.booking.bookingRef) && r.json.booking.journeyDateTime === "2027-07-10T08:00:00.000Z" && r.json.booking.vehicleSize === "Standard Car",
+    JSON.stringify(r.json),
+  );
+  const savedTripId = r.json.booking?.id;
+  const savedTripRef = r.json.booking?.bookingRef;
+  r = await alex("POST", "/customer/bookings", trip);
+  check("save same trip again → 200, no duplicate", r.status === 200 && r.json.booking.id === savedTripId, JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, journeyDate: "2027-12-01", journeyTime: "14:30" });
+  check("GMT 14:30 stored as 14:30Z", r.status === 201 && r.json.booking.journeyDateTime === "2027-12-01T14:30:00.000Z", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, passengerCount: 5 });
+  check("save trip: 5 passengers in Standard Car → 400", r.status === 400 && r.json.error.fields?.passengerCount, JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, journeyDate: "2027-02-30" });
+  check("save trip: impossible date → 400", r.status === 400 && r.json.error.fields?.journeyDate, JSON.stringify(r.json));
+  r = await client()("POST", "/customer/bookings", trip);
+  check("save trip without cookie → 401", r.status === 401);
+  r = await emily("GET", "/customer/bookings");
+  check("saved trip not visible to another customer", !r.json.bookings.some((b) => b.id === savedTripId));
+
+  // Checkout: the saved trip is Standard Car (£95 less 15 % = £80.75).
+  r = await alex("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: GET own booking → SAVED with live quote", r.status === 200 && r.json.booking.status === "SAVED" && r.json.booking.fare.totalPence === 8075, JSON.stringify(r.json));
+  r = await emily("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: other customer's booking → 404", r.status === 404);
+  r = await alex("GET", "/customer/bookings/PHC-00000");
+  check("checkout: unknown ref → 404", r.status === 404);
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 ABC89" });
+  check("checkout: bad phone → 400 phone", r.status === 400 && r.json.error.fields?.phone === "Check telephone number format (e.g. +44 7...).", JSON.stringify(r.json));
+  r = await emily("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  check("checkout: pay someone else's booking → 404", r.status === 404);
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  const paid = r.json.booking;
+  check("checkout: pay → PAID, TXN ref, fare frozen", r.status === 200 && paid.status === "PAID" && /^TXN-\d{5}$/.test(paid.paymentRef) && paid.fare.totalPence === 8075 && paid.fare.basePence - paid.fare.discountPence === 8075, JSON.stringify(r.json));
+  r = await alex("POST", `/customer/bookings/${savedTripRef}/pay`, { phone: "+44 7700 900123" });
+  check("checkout: pay again → same paymentRef, no second email", r.status === 200 && r.json.booking.paymentRef === paid.paymentRef && r.json.emailSent === false, JSON.stringify(r.json));
+  r = await alex("GET", `/customer/bookings/${savedTripRef}`);
+  check("checkout: after pay → GET shows PAID", r.status === 200 && r.json.booking.status === "PAID", JSON.stringify(r.json));
+
   r = await alex("POST", "/customer/enquiries", { type: "TRIP", bookingId: emilyBooking.id, subject: "Someone else's trip", message: "This booking belongs to another customer, it must be rejected." });
   check("TRIP enquiry with another customer's booking → 400", r.status === 400 && r.json.error.fields?.bookingId === "Choose the trip this enquiry is about.", JSON.stringify(r.json));
 
@@ -319,6 +361,92 @@ try {
   check("5th wrong code → too many attempts", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.", JSON.stringify(r.json));
   r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: code2 });
   check("right code after 5 wrong → still blocked", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.");
+
+  // ===== Forgot password (SCRUM-65) — Daniel (seeded, not used by later checks) =====
+  const fp = client();
+  const danielEmail = "daniel.brooks@example.com";
+  const resetCode = async (email) => (await fp("GET", `/dev/last-reset-code?email=${encodeURIComponent(email)}`)).json?.code;
+  for (let i = 0; i < 5; i++) await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Wrong1234" });
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Password123" });
+  check("reset: Daniel locked out before reset", r.status === 423, JSON.stringify(r.json));
+
+  r = await fp("POST", "/customer/auth/forgot-password", { email: "" });
+  check("forgot-password: empty email → 400 required", r.status === 400 && r.json.error.fields?.email === "Email address is required.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/forgot-password", { email: "nobody.here@example.com" });
+  check(
+    "forgot-password: unregistered email → 400 not registered",
+    r.status === 400 && r.json.error.fields?.email === "This email address is not registered. Please check it or sign up.",
+    JSON.stringify(r.json),
+  );
+  r = await fp("POST", "/customer/auth/forgot-password", { email: danielEmail });
+  check("forgot-password: registered email → 200", r.status === 200 && r.json.reset.expiresInMinutes === 10 && r.json.reset.resendInSeconds === 60, JSON.stringify(r.json));
+  const code4 = await resetCode(danielEmail);
+  check("forgot-password: 4-digit code issued", /^\d{4}$/.test(code4 ?? ""), String(code4));
+  r = await fp("POST", "/customer/auth/forgot-password", { email: danielEmail });
+  check("forgot-password: resend within 60 s → 429", r.status === 429 && r.json.error.retryAfterSeconds > 0, JSON.stringify(r.json));
+
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: "12" });
+  check("verify-reset-code: 2 digits → format error", r.status === 400 && r.json.error.fields?.code === "The code must be 4 digits.", JSON.stringify(r.json));
+  const wrong4 = code4 === "0000" ? "1111" : "0000";
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: wrong4 });
+  check("verify-reset-code: wrong code → 4 attempts left", r.status === 400 && r.json.error.fields?.code === "The code is incorrect. 4 attempts left.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: "nobody.here@example.com", code: "1234" });
+  check("verify-reset-code: unknown email → expired (no hint)", r.status === 400 && r.json.error.fields?.code === "This code has expired. Request a new code.");
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: code4 });
+  check("verify-reset-code: right code → reset token", r.status === 200 && /^[0-9a-f]{64}$/.test(r.json.resetToken ?? ""), JSON.stringify(r.json));
+  const token = r.json.resetToken;
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: code4 });
+  check("verify-reset-code: code cannot be used twice", r.status === 400 && r.json.error.fields?.code === "This code has expired. Request a new code.");
+
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "short", confirmPassword: "other" });
+  check(
+    "reset-password: weak + mismatch → registration rule messages",
+    r.status === 400 && r.json.error.fields?.password === "Password must be at least 8 characters." && r.json.error.fields?.confirmPassword === "Passwords do not match.",
+    JSON.stringify(r.json),
+  );
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: "f".repeat(64), password: "NewPass2026", confirmPassword: "NewPass2026" });
+  check("reset-password: wrong token → session expired", r.status === 400 && r.json.error.fields?.resetToken === "Your reset session has expired. Please request a new code.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "NewPass2026", confirmPassword: "NewPass2026" });
+  check("reset-password: valid → 200", r.status === 200 && r.json.ok === true, JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "Another2026", confirmPassword: "Another2026" });
+  check("reset-password: token is one-time", r.status === 400 && r.json.error.fields?.resetToken);
+
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Password123" });
+  check("after reset: old password rejected", r.status === 401);
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "NewPass2026" });
+  check("after reset: new password logs in (lockout cleared)", r.status === 200 && r.json.user?.email === danielEmail, JSON.stringify(r.json));
+  // ===== Enquiry: planned trip + contact details (SCRUM-95) =====
+  const planned = {
+    type: "TRIP",
+    bookingId: null,
+    subject: "Route Planning & Waiting Time",
+    message: "Request extra 15m waiting time at Piccadilly due to expected inbound rail congestion.",
+    category: "Route Planning & Waiting Time",
+    contactName: "Alex Morgan",
+    contactEmail: "alex.morgan@example.com",
+    contactPhone: "+44 7700 900123",
+    tripSnapshot: { pickupLocation: "Manchester Piccadilly, M1 2PB", destination: "Manchester Airport T2, M90 4FP", journeyDate: "2027-07-10", journeyTime: "09:00", passengerCount: 3, vehicleSize: "Seven-Seater" },
+  };
+  r = await alex("POST", "/customer/enquiries", { ...planned, contactName: "" });
+  check("contact: empty full name → 400 with drawn message", r.status === 400 && r.json.error.fields?.contactName === "Full name is required", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/enquiries", { ...planned, category: "" });
+  check("contact: no category → 400", r.status === 400 && r.json.error.fields?.category === "Please select an enquiry category", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/enquiries", planned);
+  check("planned trip (no saved booking) → 201", r.status === 201 && /^ENQ-\d{6}$/.test(r.json.enquiry?.code ?? ""), JSON.stringify(r.json));
+  const plannedId = r.json.enquiry?.id;
+  r = await staff("GET", `/staff/enquiries/${plannedId}`);
+  check(
+    "staff detail shows contact, category and planned trip",
+    r.status === 200 && r.json.enquiry.category === "Route Planning & Waiting Time" && r.json.enquiry.contactEmail === "alex.morgan@example.com" && r.json.enquiry.tripSnapshot?.pickupLocation === "Manchester Piccadilly, M1 2PB" && r.json.booking === null,
+    JSON.stringify(r.json),
+  );
+
+  // Staff sees the payment status of the trip a customer asks about (SCRUM-77 / SCRUM-90).
+  r = await alex("POST", "/customer/enquiries", { type: "TRIP", bookingId: savedTripId, subject: "Paid trip question", message: "Question about the trip I have already paid for." });
+  check("TRIP enquiry on the paid trip → 201", r.status === 201, JSON.stringify(r.json));
+  r = await staff("GET", `/staff/enquiries/${r.json.enquiry?.id}`);
+  check("staff detail: trip booking shows PAID and the fare", r.status === 200 && r.json.booking?.status === "PAID" && r.json.booking?.farePence === 8075, JSON.stringify(r.json.booking));
+
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);

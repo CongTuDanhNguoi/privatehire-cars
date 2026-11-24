@@ -25,6 +25,8 @@ export type RegisterBody = z.infer<typeof RegisterBody>;
 
 export const EmailQuery = z.object({ email: text });
 export const VerifyEmailBody = z.object({ email: text, code: text });
+// Forgot password (SCRUM-65)
+export const ResetPasswordBody = z.object({ email: text, resetToken: text, password: text, confirmPassword: text });
 
 // Parses a body/query against a schema; a wrong type (e.g. a number instead of a string) becomes a 400.
 export function parseInput<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {

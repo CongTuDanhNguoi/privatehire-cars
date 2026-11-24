@@ -43,6 +43,7 @@ export interface OutgoingEmail {
   bypassTestMode?: boolean;
   // Email verification: the code is shown in a large box in the HTML version.
   verificationCode?: string;
+  codePurpose?: "verify" | "reset"; // wording around the code box (default: verify email)
   expiresInMinutes?: number;
 }
 
@@ -59,6 +60,7 @@ export async function sendEmail(email: OutgoingEmail): Promise<{ ok: true } | { 
       body: email.body,
       enquiryCode: email.enquiryCode,
       verificationCode: email.verificationCode,
+      codePurpose: email.codePurpose,
       expiresInMinutes: email.expiresInMinutes,
     }),
     enquiryCode: email.enquiryCode,

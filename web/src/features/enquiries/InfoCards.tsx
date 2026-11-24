@@ -1,6 +1,6 @@
 // Left column of the enquiry detail: customer, the question itself, and the trip (TRIP enquiries only).
 import type { ReactNode } from "react";
-import type { Booking, EnquiryDetail } from "../../types";
+import type { Booking, Enquiry, EnquiryDetail } from "../../types";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { CopyButton } from "../../components/ui/CopyButton";
@@ -56,6 +56,41 @@ export function EnquiryCard({ message, createdAt, customerName }: { message: str
   );
 }
 
+// Contact details and category from the SCRUM-95 form. Renders nothing for older enquiries.
+export function EnquiryDetailsCard({ enquiry }: { enquiry: Enquiry }) {
+  if (!enquiry.category && !enquiry.contactName && !enquiry.contactEmail && !enquiry.contactPhone) return null;
+  return (
+    <Card title="Enquiry details">
+      <dl className="m-0">
+        {enquiry.category && <Row term="Category">{enquiry.category}</Row>}
+        {enquiry.contactName && <Row term="Contact name">{enquiry.contactName}</Row>}
+        {enquiry.contactEmail && <Row term="Contact email">{enquiry.contactEmail}</Row>}
+        {enquiry.contactPhone && <Row term="Contact phone">{enquiry.contactPhone}</Row>}
+      </dl>
+    </Card>
+  );
+}
+
+// Enquiries sent before the fix stored the app's vehicle key; show the name for those too.
+const VEHICLE_NAMES: Record<string, string> = { standard: "Standard Car", "seven-seater": "Seven-Seater" };
+
+// Trip the customer planned without a saved booking (SCRUM-95 "Journey Planning").
+export function PlannedTripCard({ trip }: { trip: NonNullable<Enquiry["tripSnapshot"]> }) {
+  return (
+    <Card title="Planned trip">
+      <dl className="m-0">
+        <Row term="Pickup">{trip.pickupLocation}</Row>
+        <Row term="Destination">{trip.destination}</Row>
+        <Row term="Date & time">
+          {trip.journeyDate} {trip.journeyTime} <span className="text-helper">(UK time)</span>
+        </Row>
+        <Row term="Passengers">{trip.passengerCount}</Row>
+        <Row term="Vehicle">{VEHICLE_NAMES[trip.vehicleSize] ?? trip.vehicleSize}</Row>
+      </dl>
+    </Card>
+  );
+}
+
 export function TripCard({ booking }: { booking: Booking }) {
   return (
     <Card title="Trip details">
@@ -72,6 +107,15 @@ export function TripCard({ booking }: { booking: Booking }) {
         </Row>
         <Row term="Passengers">{booking.passengerCount}</Row>
         <Row term="Vehicle">{booking.vehicleSize}</Row>
+        {booking.status && (
+          <Row term="Payment">
+            {booking.status === "PAID" && booking.farePence != null ? (
+              <span className="font-semibold text-[#166534]">Paid · £{(booking.farePence / 100).toFixed(2)}</span>
+            ) : (
+              <span className="text-[#64748b]">Not paid</span>
+            )}
+          </Row>
+        )}
       </dl>
     </Card>
   );

@@ -12,7 +12,7 @@ import { Skeleton } from "../components/ui/Feedback";
 import { Icon } from "../components/ui/Icon";
 import { Segmented } from "../components/ui/Segmented";
 import { useToast } from "../components/ui/Toast";
-import { CustomerCard, EnquiryCard, TripCard } from "../features/enquiries/InfoCards";
+import { CustomerCard, EnquiryCard, EnquiryDetailsCard, PlannedTripCard, TripCard } from "../features/enquiries/InfoCards";
 import { ReplyComposer } from "../features/enquiries/ReplyComposer";
 import { ResponseHistory, StatusHistory } from "../features/enquiries/ResponseHistory";
 import { useDraft } from "../features/enquiries/useDraft";
@@ -208,7 +208,9 @@ function DetailView({ detail, emailSettings, setDetail, reload }: DetailViewProp
         </div>
         <div className="flex min-w-0 flex-col gap-4 md:gap-6 lg:col-span-4">
           <CustomerCard customer={detail.customer} />
+          <EnquiryDetailsCard enquiry={enquiry} />
           {enquiry.type === "TRIP" && detail.booking && <TripCard booking={detail.booking} />}
+          {enquiry.type === "TRIP" && !detail.booking && enquiry.tripSnapshot && <PlannedTripCard trip={enquiry.tripSnapshot} />}
           <StatusHistory items={detail.statusHistory} />
         </div>
       </div>

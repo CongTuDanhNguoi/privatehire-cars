@@ -32,6 +32,19 @@ CREATE TABLE email_verifications (
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Forgot password (SCRUM-65): one active 4-digit code per customer, then a one-time reset token.
+-- Also created at startup (CREATE TABLE IF NOT EXISTS) for databases made before this table existed.
+CREATE TABLE password_resets (
+  customer_id      INT UNSIGNED PRIMARY KEY,
+  code_hash        CHAR(64)     NOT NULL,           -- HMAC-SHA256 of the code
+  expires_at       DATETIME     NOT NULL,
+  attempts         TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  last_sent_at     DATETIME     NOT NULL,
+  token_hash       CHAR(64)     NULL,               -- set once the right code is entered
+  token_expires_at DATETIME     NULL,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE bookings (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   booking_ref      VARCHAR(20)  NOT NULL UNIQUE,    -- e.g. PHC-24051
@@ -42,6 +55,12 @@ CREATE TABLE bookings (
   journey_datetime DATETIME     NOT NULL,
   passenger_count  TINYINT UNSIGNED NOT NULL,
   vehicle_size     VARCHAR(40)  NOT NULL,           -- e.g. 'Seven-Seater'
+  status           ENUM('SAVED','PAID') NOT NULL DEFAULT 'SAVED',
+  fare_pence       INT UNSIGNED NULL,               -- total paid in pence, frozen at payment
+  discount_pence   INT UNSIGNED NULL,               -- online discount in pence, frozen at payment
+  notify_phone     VARCHAR(30)  NULL,
+  payment_ref      VARCHAR(20)  NULL,               -- e.g. TXN-48213
+  paid_at          DATETIME     NULL,               -- UTC
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -54,6 +73,11 @@ CREATE TABLE enquiries (
   subject     VARCHAR(120)  NOT NULL,
   message     VARCHAR(2000) NOT NULL,
   status      ENUM('AWAITING','RESOLVED') NOT NULL DEFAULT 'AWAITING',
+  contact_name  VARCHAR(100) NULL,                       -- SCRUM-95 form fields (NULL for older enquiries)
+  contact_email VARCHAR(254) NULL,
+  contact_phone VARCHAR(30)  NULL,
+  category      VARCHAR(80)  NULL,
+  trip_snapshot JSON         NULL,                       -- planned trip when there is no saved booking
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id),

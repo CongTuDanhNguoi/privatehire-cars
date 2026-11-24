@@ -3,7 +3,8 @@
 // Nhân viên xem và trả lời trong Staff Portal.
 // =============================================================
 import { clearSession, SERVER_UNAVAILABLE_MESSAGE } from "./auth";
-import type { EnquiryErrors, EnquiryType } from "../validation/enquiryValidation";
+import type { EnquiryErrors, EnquiryType, TripSnapshot } from "../validation/enquiryValidation";
+import type { FareQuote } from "../data/pricing";
 
 export interface Booking {
   id: number;
@@ -61,10 +62,51 @@ async function call<T>(path: string, init: { method?: "GET" | "POST"; body?: unk
 
 export const listMyBookings = () => call<{ bookings: Booking[] }>("/bookings");
 export const listMyEnquiries = () => call<{ enquiries: MyEnquiry[] }>("/enquiries");
-export const sendEnquiry = (body: { type: EnquiryType; bookingId: number | null; subject: string; message: string }) =>
-  call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
+export const sendEnquiry = (body: {
+  type: EnquiryType;
+  bookingId: number | null;
+  subject: string;
+  message: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  category?: string;
+  tripSnapshot?: TripSnapshot | null;
+}) => call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
+
+// Lưu chuyến khi xe còn trống (để xem giá và thanh toán — SCRUM-72). Gửi lại cùng chuyến thì server trả chuyến cũ.
+export const saveTrip = (body: {
+  serviceName: string;
+  pickupLocation: string;
+  destination: string;
+  journeyDate: string; // YYYY-MM-DD
+  journeyTime: string; // HH:mm, giờ UK
+  passengerCount: number;
+  vehicleSize: string; // "standard" | "seven-seater"
+}) => call<{ booking: Booking }>("/bookings", { method: "POST", body });
+
+// Checkout (SCRUM-72…90): one saved trip, and the simulated payment for it.
+export interface CheckoutBooking extends Booking {
+  status: "SAVED" | "PAID";
+  fare: FareQuote;
+  notifyPhone: string | null;
+  paymentRef: string | null;
+  paidAt: string | null;
+  cardLast4: string | null;
+  customerPhone: string | null;
+}
+
+export const getBooking = (ref: string) => call<{ booking: CheckoutBooking }>(`/bookings/${encodeURIComponent(ref)}`);
+export const payBooking = (ref: string, phone: string) =>
+  call<{ booking: CheckoutBooking; emailSent: boolean }>(`/bookings/${encodeURIComponent(ref)}/pay`, { method: "POST", body: { phone } });
 
 // Giờ chuyến xe là giờ UK: hiển thị đúng giờ London dù máy đang ở múi giờ nào.
+// "GMT" in winter, "BST" in summer: the zone name for that exact date.
+export function ukZoneName(iso: string): string {
+  const part = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", timeZoneName: "short" }).formatToParts(new Date(iso)).find((p) => p.type === "timeZoneName");
+  return part?.value ?? "";
+}
+
 export function formatUkDateTime(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
