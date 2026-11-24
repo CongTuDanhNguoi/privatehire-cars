@@ -34,6 +34,7 @@ export default function NotificationPage() {
     void getBooking(ref).then((r) => {
       if (!active) return;
       if (!r.ok) {
+        if (r.reason === "signedOut") return navigate("/login", { replace: true });
         setState({ status: "error", message: r.message });
         return;
       }
@@ -107,6 +108,7 @@ export default function NotificationPage() {
       navigate(`/checkout/${booking.bookingRef}/success`, { state: { emailSent: r.data.emailSent } });
       return;
     }
+    if (r.reason === "signedOut") return navigate("/login", { replace: true });
     const phoneFromServer = (r.fields as Record<string, string> | undefined)?.phone; // server reports the phone field by name
     if (phoneFromServer) setPhoneError(phoneFromServer);
     else setBannerError(r.message);

@@ -161,6 +161,39 @@ await test("CK-08", "July trip shows BST, not GMT", async () => {
   return julyRef;
 });
 
+// 9. Session ends while paying: the customer goes back to the login screen (this test logs the browser out).
+let expiredRef = "";
+await test("CK-09", "Session ends on the Notification step → /login", async () => {
+  const stamp = Date.now();
+  const saved = await page.request.post(`${BASE}/api/customer/bookings`, {
+    data: {
+      serviceName: "Airport Transfer",
+      pickupLocation: "Manchester Piccadilly Station, M1 2PB",
+      destination: "Manchester Airport Terminal 2, M90 4FP",
+      journeyDate: `2029-${String((stamp % 12) + 1).padStart(2, "0")}-${String((Math.floor(stamp / 12) % 28) + 1).padStart(2, "0")}`,
+      journeyTime: `11:${String(stamp % 60).padStart(2, "0")}`,
+      passengerCount: 2,
+      vehicleSize: "standard",
+    },
+  });
+  expiredRef = (await saved.json()).booking.bookingRef;
+  await page.goto(`${BASE}/checkout/${expiredRef}/notify`);
+  await page.click("[data-testid=notify-next]");
+  await page.fill("#notifyPhone", "+44 7700 900123");
+  await page.locator("#notifyPhone").blur();
+  await page.evaluate(() => fetch("/api/customer/auth/logout", { method: "POST" }));
+  await page.click("[data-testid=notify-pay]");
+  await page.waitForURL("**/login", { timeout: 10000 });
+  return pathname();
+});
+
+// 10. Opening a checkout URL while logged out also ends on the login screen.
+await test("CK-10", "Logged out → checkout URL redirects to /login", async () => {
+  await page.goto(`${BASE}/checkout/${expiredRef}/price`);
+  await page.waitForURL("**/login", { timeout: 10000 });
+  return pathname();
+});
+
 await browser.close();
 
 const passed = results.filter((r) => r.ok).length;

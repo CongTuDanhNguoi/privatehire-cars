@@ -57,6 +57,7 @@ export default function EditJourneyPage() {
     void getBooking(ref).then((r) => {
       if (!active) return;
       if (!r.ok) {
+        if (r.reason === "signedOut") return navigate("/login", { replace: true });
         setState({ status: "error", message: r.message });
         return;
       }
@@ -134,6 +135,7 @@ export default function EditJourneyPage() {
     });
     setSaving(false);
     if (!r.ok) {
+      if (r.reason === "signedOut") return navigate("/login", { replace: true });
       setSaveError(r.message);
       return;
     }

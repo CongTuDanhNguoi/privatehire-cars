@@ -55,6 +55,7 @@ export default function PriceReviewPage() {
     void getBooking(ref).then((r) => {
       if (!active) return;
       if (!r.ok) {
+        if (r.reason === "signedOut") return navigate("/login", { replace: true });
         setState({ status: "error", message: r.message });
         return;
       }

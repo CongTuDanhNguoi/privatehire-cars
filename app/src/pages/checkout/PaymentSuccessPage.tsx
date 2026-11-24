@@ -26,6 +26,7 @@ export default function PaymentSuccessPage() {
     let active = true;
     void getBooking(ref).then((r) => {
       if (!active) return;
+      if (!r.ok && r.reason === "signedOut") return navigate("/login", { replace: true });
       setState(r.ok ? { status: "ready", booking: r.data.booking } : { status: "error", message: r.message });
     });
     return () => {
