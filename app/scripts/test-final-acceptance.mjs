@@ -383,7 +383,7 @@ if (browser) {
     assert(timeVal === "10:00", "Time lost on back navigation");
 
     // Back from Journey to Services
-    await page.click('button[aria-label="Go Back to Service Selection"]');
+    await page.click('button[data-node-id="6:1619"]');
     await wait(200);
     assert(new URL(page.url()).pathname === "/services", "Expected /services");
     const isServiceActive = (await page.getAttribute('[data-testid="service-airport-transfer"]', "aria-checked")) === "true";
