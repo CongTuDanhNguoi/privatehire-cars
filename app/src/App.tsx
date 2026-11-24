@@ -15,6 +15,8 @@
 //   /checkout/:ref/edit  Edit Journey 05A   (BẮT BUỘC đăng nhập; SCRUM-72)
 //   /checkout/:ref/notify  Notification 01-03 (BẮT BUỘC đăng nhập; SCRUM-88)
 //   /checkout/:ref/success Payment Successful (BẮT BUỘC đăng nhập; SCRUM-90)
+//   /receipt/:ref        Receipt 14         (BẮT BUỘC đăng nhập; SCRUM-83)
+//   /receipt/:ref/print  Receipt print 15   (BẮT BUỘC đăng nhập; SCRUM-83)
 //   /gallery             Xem các màn Figma tĩnh (không thuộc luồng chính)
 // =============================================================
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -29,6 +31,8 @@ import PriceReviewPage from "./pages/checkout/PriceReviewPage";
 import EditJourneyPage from "./pages/checkout/EditJourneyPage";
 import NotificationPage from "./pages/checkout/NotificationPage";
 import PaymentSuccessPage from "./pages/checkout/PaymentSuccessPage";
+import ReceiptPage from "./pages/checkout/ReceiptPage";
+import ReceiptPrintPage from "./pages/checkout/ReceiptPrintPage";
 import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
@@ -62,6 +66,8 @@ export default function App() {
       <Route path="/checkout/:ref/edit" element={<RequireAuth><EditJourneyPage /></RequireAuth>} />
       <Route path="/checkout/:ref/notify" element={<RequireAuth><NotificationPage /></RequireAuth>} />
       <Route path="/checkout/:ref/success" element={<RequireAuth><PaymentSuccessPage /></RequireAuth>} />
+      <Route path="/receipt/:ref" element={<RequireAuth><ReceiptPage /></RequireAuth>} />
+      <Route path="/receipt/:ref/print" element={<RequireAuth><ReceiptPrintPage /></RequireAuth>} />
 
       <Route path="/gallery" element={<GalleryIndex />} />
       <Route path="/gallery/:slug" element={<GalleryScreen />} />
