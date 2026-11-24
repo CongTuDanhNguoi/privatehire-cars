@@ -441,6 +441,12 @@ try {
     JSON.stringify(r.json),
   );
 
+  // Staff sees the payment status of the trip a customer asks about (SCRUM-77 / SCRUM-90).
+  r = await alex("POST", "/customer/enquiries", { type: "TRIP", bookingId: savedTripId, subject: "Paid trip question", message: "Question about the trip I have already paid for." });
+  check("TRIP enquiry on the paid trip → 201", r.status === 201, JSON.stringify(r.json));
+  r = await staff("GET", `/staff/enquiries/${r.json.enquiry?.id}`);
+  check("staff detail: trip booking shows PAID and the fare", r.status === 200 && r.json.booking?.status === "PAID" && r.json.booking?.farePence === 8075, JSON.stringify(r.json.booking));
+
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);

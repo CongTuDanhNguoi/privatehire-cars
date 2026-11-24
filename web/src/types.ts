@@ -71,6 +71,9 @@ export interface Booking {
   journeyDateTime: string;
   passengerCount: number;
   vehicleSize: string;
+  // Payment status (checkout). farePence is the total paid, in pence.
+  status?: "SAVED" | "PAID";
+  farePence?: number | null;
 }
 
 export interface EnquiryResponse {

@@ -104,6 +104,15 @@ export function TripCard({ booking }: { booking: Booking }) {
         </Row>
         <Row term="Passengers">{booking.passengerCount}</Row>
         <Row term="Vehicle">{booking.vehicleSize}</Row>
+        {booking.status && (
+          <Row term="Payment">
+            {booking.status === "PAID" && booking.farePence != null ? (
+              <span className="font-semibold text-[#166534]">Paid · £{(booking.farePence / 100).toFixed(2)}</span>
+            ) : (
+              <span className="text-[#64748b]">Not paid</span>
+            )}
+          </Row>
+        )}
       </dl>
     </Card>
   );

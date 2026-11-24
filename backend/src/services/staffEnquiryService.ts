@@ -5,6 +5,7 @@ import { AppError } from "../errors.js";
 import type { ListEnquiriesQuery } from "../validation/enquiries.js";
 import { enquiryCode } from "../validation/reply.js";
 import { ensureEnquiryContactColumns, toBooking } from "./customerEnquiryService.js";
+import { ensureBookingPaymentColumns } from "./checkoutService.js";
 
 export type EnquiryStatus = "AWAITING" | "RESOLVED";
 
@@ -151,12 +152,16 @@ export async function getEnquiryDetail(id: number) {
 
   let booking = null;
   if (row.b_id) {
+    await ensureBookingPaymentColumns();
     const [b] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, booking_ref, service_name, pickup_location, destination, journey_datetime, passenger_count, vehicle_size
+      `SELECT id, booking_ref, service_name, pickup_location, destination, journey_datetime, passenger_count, vehicle_size, status, fare_pence
        FROM bookings WHERE id = ?`,
       [row.b_id],
     );
-    booking = b[0] ? toBooking(b[0] as Parameters<typeof toBooking>[0]) : null;
+    // Payment status of the booking (SCRUM-77/90): farePence is the total paid, null while unpaid.
+    booking = b[0]
+      ? { ...toBooking(b[0] as Parameters<typeof toBooking>[0]), status: b[0].status as string, farePence: (b[0].fare_pence as number | null) ?? null }
+      : null;
   }
 
   const [responses] = await pool.execute<RowDataPacket[]>(`${RESPONSE_SELECT} WHERE r.enquiry_id = ? ORDER BY r.created_at DESC, r.id DESC`, [id]);
