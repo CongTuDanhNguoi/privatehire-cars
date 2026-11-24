@@ -8,7 +8,7 @@ import MobileFrame from "../../components/MobileFrame";
 import Icon from "../../components/Icon";
 import { CARD, CheckoutHeader, Chip, Stepper, initials, splitPlace } from "../../components/checkout/CheckoutUi";
 import { getCurrentUser } from "../../services/auth";
-import { formatUkDateTime } from "../../services/support";
+import { formatUkDateTime, ukZoneName } from "../../services/support";
 import { formatGbp } from "../../data/pricing";
 import { useCheckoutBooking } from "./useCheckoutBooking";
 
@@ -107,7 +107,7 @@ export default function ReceiptPage() {
         <section className={`${CARD} p-4`}>
           <p className="text-[11px] font-semibold tracking-[0.5px] text-[#64748b] uppercase">Journey date &amp; pickup time</p>
           <p className="pt-0.5 text-[15px] font-bold text-[#0b2341]">
-            <time dateTime={booking.journeyDateTime}>{formatUkDateTime(booking.journeyDateTime)}</time> <span className="text-[12px] font-medium text-[#64748b]">GMT</span>
+            <time dateTime={booking.journeyDateTime}>{formatUkDateTime(booking.journeyDateTime)}</time> <span className="text-[12px] font-medium text-[#64748b]">{ukZoneName(booking.journeyDateTime)}</span>
           </p>
           <div className="mt-4 flex flex-col gap-3 border-l-2 border-[#0284c7] pl-4">
             <div>

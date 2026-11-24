@@ -8,7 +8,7 @@ import MobileFrame from "../../components/MobileFrame";
 import Icon from "../../components/Icon";
 import { CARD, CheckoutHeader, Chip } from "../../components/checkout/CheckoutUi";
 import { getCurrentUser } from "../../services/auth";
-import { formatUkDateTime, getBooking, type CheckoutBooking } from "../../services/support";
+import { formatUkDateTime, getBooking, ukZoneName, type CheckoutBooking } from "../../services/support";
 import { formatGbp } from "../../data/pricing";
 import { useBooking } from "../../context/BookingContext";
 
@@ -99,7 +99,7 @@ export default function PaymentSuccessPage() {
             </div>
             <div className="flex justify-between">
               <dt className="text-[#64748b]">Payment Date &amp; Time</dt>
-              <dd className="text-[#0b2341]">{booking.paidAt ? `${formatUkDateTime(booking.paidAt)} GMT` : "—"}</dd>
+              <dd className="text-[#0b2341]">{booking.paidAt ? `${formatUkDateTime(booking.paidAt)} ${ukZoneName(booking.paidAt)}` : "—"}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[#64748b]">Card</dt>

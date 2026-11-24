@@ -8,7 +8,7 @@ import Icon from "../../components/Icon";
 import QrMark from "../../components/checkout/QrMark";
 import { CARD, Chip, splitPlace } from "../../components/checkout/CheckoutUi";
 import { getCurrentUser } from "../../services/auth";
-import { formatUkDateTime } from "../../services/support";
+import { formatUkDateTime, ukZoneName } from "../../services/support";
 import { formatGbp } from "../../data/pricing";
 import { receiptNumber } from "./ReceiptPage";
 import { useCheckoutBooking } from "./useCheckoutBooking";
@@ -151,7 +151,7 @@ export default function ReceiptPrintPage() {
         <section className="rounded-xl bg-[#e0f2fe] p-3 text-[12.5px]">
           <div className="flex items-center justify-between text-[11px] font-bold tracking-[0.5px] uppercase">
             <span>Trip itinerary</span>
-            <span className="font-normal normal-case">{formatUkDateTime(booking.journeyDateTime)} GMT</span>
+            <span className="font-normal normal-case">{formatUkDateTime(booking.journeyDateTime)} {ukZoneName(booking.journeyDateTime)}</span>
           </div>
           <div className="mt-2 flex flex-col gap-2">
             <p>

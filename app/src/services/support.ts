@@ -101,6 +101,12 @@ export const payBooking = (ref: string, phone: string) =>
   call<{ booking: CheckoutBooking; emailSent: boolean }>(`/bookings/${encodeURIComponent(ref)}/pay`, { method: "POST", body: { phone } });
 
 // Giờ chuyến xe là giờ UK: hiển thị đúng giờ London dù máy đang ở múi giờ nào.
+// "GMT" in winter, "BST" in summer: the zone name for that exact date.
+export function ukZoneName(iso: string): string {
+  const part = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", timeZoneName: "short" }).formatToParts(new Date(iso)).find((p) => p.type === "timeZoneName");
+  return part?.value ?? "";
+}
+
 export function formatUkDateTime(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",

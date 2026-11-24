@@ -51,8 +51,9 @@ await test("CK-02", "Save a Seven-Seater trip", async () => {
       serviceName: "Airport Transfer",
       pickupLocation: "Manchester Piccadilly Station, M1 2PB",
       destination: "Manchester Airport Terminal 2, M90 4FP",
-      journeyDate: "2027-09-15",
-      journeyTime: "14:30",
+      // A different trip each run: saving an identical trip returns the existing (possibly already paid) booking.
+      journeyDate: `2028-${String((Date.now() % 12) + 1).padStart(2, "0")}-${String((Math.floor(Date.now() / 12) % 28) + 1).padStart(2, "0")}`,
+      journeyTime: `10:${String(Date.now() % 60).padStart(2, "0")}`,
       passengerCount: 3,
       vehicleSize: "seven-seater",
     },
@@ -134,6 +135,30 @@ await test("CK-07", "General enquiry: errors, then submitted", async () => {
   const code = await page.textContent("[data-testid=enquiry-code]");
   expect(/^ENQ-\d{6}$/.test(code ?? ""), `code ${code}`);
   return code;
+});
+
+// 8. A July trip is on British Summer Time: the receipt must say BST, never GMT.
+await test("CK-08", "July trip shows BST, not GMT", async () => {
+  const saved = await page.request.post(`${BASE}/api/customer/bookings`, {
+    data: {
+      serviceName: "Airport Transfer",
+      pickupLocation: "Manchester Piccadilly Station, M1 2PB",
+      destination: "Manchester Airport Terminal 2, M90 4FP",
+      journeyDate: "2027-07-10",
+      journeyTime: "09:00",
+      passengerCount: 3,
+      vehicleSize: "seven-seater",
+    },
+  });
+  const julyRef = (await saved.json()).booking.bookingRef;
+  const paid = await page.request.post(`${BASE}/api/customer/bookings/${julyRef}/pay`, { data: { phone: "+44 7700 900123" } });
+  expect(paid.status() === 200, `pay status ${paid.status()}`);
+  await page.goto(`${BASE}/receipt/${julyRef}`);
+  await page.waitForSelector("[data-testid=receipt-total]", { timeout: 10000 });
+  const text = await page.innerText("[data-testid=receipt-page]");
+  expect(text.includes("09:00") && text.includes("BST"), "no BST label on the receipt");
+  expect(!text.includes("09:00 GMT"), "a July trip is labelled GMT");
+  return julyRef;
 });
 
 await browser.close();
