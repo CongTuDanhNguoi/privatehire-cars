@@ -32,6 +32,19 @@ CREATE TABLE email_verifications (
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Forgot password (SCRUM-65): one active 4-digit code per customer, then a one-time reset token.
+-- Also created at startup (CREATE TABLE IF NOT EXISTS) for databases made before this table existed.
+CREATE TABLE password_resets (
+  customer_id      INT UNSIGNED PRIMARY KEY,
+  code_hash        CHAR(64)     NOT NULL,           -- HMAC-SHA256 of the code
+  expires_at       DATETIME     NOT NULL,
+  attempts         TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  last_sent_at     DATETIME     NOT NULL,
+  token_hash       CHAR(64)     NULL,               -- set once the right code is entered
+  token_expires_at DATETIME     NULL,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE bookings (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   booking_ref      VARCHAR(20)  NOT NULL UNIQUE,    -- e.g. PHC-24051

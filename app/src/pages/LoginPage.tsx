@@ -162,8 +162,13 @@ export default function LoginPage() {
               }
             />
             {banner?.kind === "auth" && <p className="-mb-2 text-[13px] font-semibold text-[#dc2626]">* Invalid email or password.</p>}
-            {/* Chưa có màn Forgot Password (ngoài phạm vi hiện tại) */}
-            <button type="button" className="-mt-1 self-end text-[12px] font-medium text-[#0284c7] hover:underline">
+            {/* SCRUM-65: luồng Quên mật khẩu (mang theo email đã gõ) */}
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password", { state: { email: email.trim() } })}
+              data-testid="forgot-password-link"
+              className="-mt-1 cursor-pointer self-end text-[12px] font-medium text-[#0284c7] hover:underline"
+            >
               Forgot Password?
             </button>
 

@@ -15,8 +15,9 @@ import {
   resendVerificationCode,
   verifyEmailCode,
 } from "../services/emailVerificationService.js";
+import { requestPasswordReset, resetPassword, verifyResetCode } from "../services/passwordResetService.js";
 import { endSession, startSession } from "../services/session.js";
-import { EmailQuery, LoginBody, RegisterBody, VerifyEmailBody, parseInput } from "../validation/auth.js";
+import { EmailQuery, LoginBody, RegisterBody, ResetPasswordBody, VerifyEmailBody, parseInput } from "../validation/auth.js";
 
 export const customerAuthRouter = Router();
 
@@ -57,6 +58,22 @@ customerAuthRouter.get("/me", requireCustomer, async (_req, res) => {
     throw new AppError("UNAUTHENTICATED", "Your session has expired. Please sign in again.");
   }
   res.json({ user: { ...user, loggedInAt: res.locals.sessionIssuedAt!.toISOString() } });
+});
+
+// ---------- Forgot password (SCRUM-65): email → 4-digit code → new password ----------
+customerAuthRouter.post("/forgot-password", async (req, res) => {
+  const { email } = parseInput(EmailQuery, req.body);
+  res.json({ reset: await requestPasswordReset(email) });
+});
+
+customerAuthRouter.post("/verify-reset-code", async (req, res) => {
+  const { email, code } = parseInput(VerifyEmailBody, req.body);
+  res.json(await verifyResetCode(email, code));
+});
+
+customerAuthRouter.post("/reset-password", async (req, res) => {
+  await resetPassword(parseInput(ResetPasswordBody, req.body));
+  res.json({ ok: true });
 });
 
 customerAuthRouter.get("/email-exists", async (req, res) => {

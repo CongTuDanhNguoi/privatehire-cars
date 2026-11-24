@@ -41,18 +41,20 @@ export interface EmailHtmlInput {
   customerName: string;
   body: string; // plain text (staff reply, or the verification explanation)
   enquiryCode?: string; // shown in the footer when it is a real enquiry reference
-  verificationCode?: string; // shown in a large box (email verification)
+  verificationCode?: string; // shown in a large box (email verification / password reset)
+  codePurpose?: "verify" | "reset";
   expiresInMinutes?: number;
 }
 
 export function renderEmailHtml(input: EmailHtmlInput): string {
   const name = escapeHtml(displayName(input.customerName));
+  const reset = input.codePurpose === "reset";
   const content = input.verificationCode
     ? `<p style="margin:0 0 16px;${FONT}font-size:15px;line-height:24px;color:${NAVY};">Hi ${name},</p>
-<p style="margin:0 0 8px;${FONT}font-size:15px;line-height:24px;color:${NAVY};">Use this code to verify your email address in the PrivateHire Cars app:</p>
+<p style="margin:0 0 8px;${FONT}font-size:15px;line-height:24px;color:${NAVY};">${reset ? "Use this code to reset your password in the PrivateHire Cars app:" : "Use this code to verify your email address in the PrivateHire Cars app:"}</p>
 ${codeBox(input.verificationCode)}
 <p style="margin:0 0 16px;${FONT}font-size:15px;line-height:24px;color:${NAVY};">The code expires in ${input.expiresInMinutes ?? 10} minutes.</p>
-<p style="margin:0;${FONT}font-size:13px;line-height:20px;color:${GREY};">If you did not create an account, you can safely ignore this email.</p>`
+<p style="margin:0;${FONT}font-size:13px;line-height:20px;color:${GREY};">${reset ? "If you did not ask to reset your password, you can safely ignore this email. Your password stays the same." : "If you did not create an account, you can safely ignore this email."}</p>`
     : paragraphs(input.body);
 
   const reference = input.enquiryCode?.startsWith("ENQ-")

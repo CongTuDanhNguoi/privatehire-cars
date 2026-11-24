@@ -14,6 +14,7 @@ import AppBar from "../components/AppBar";
 import Icon, { type IconName } from "../components/Icon";
 import MobileFrame from "../components/MobileFrame";
 import { useBooking } from "../context/BookingContext";
+import { saveTrip } from "../services/support";
 import { formatDateDisplay } from "../validation/journeyValidation";
 import { calculateFleetAvailability, determineAvailability } from "../validation/availabilityRules";
 
@@ -57,6 +58,13 @@ export default function AvailabilityPage() {
     }, 600);
     return () => clearTimeout(timer);
   }, [status, journeyDate, journeyTime, vehicleSize, passengerCount, setAvailabilityResult]);
+
+  // Xe còn trống → lưu chuyến để khách hỏi "About a trip" ở trang Support. Lưu ngầm; lỗi không ảnh hưởng màn này.
+  const serviceName = selectedService?.title;
+  useEffect(() => {
+    if (status !== "AVAILABLE" || !serviceName || !pickupLocation || !destination || !journeyDate || !journeyTime || !vehicleSize) return;
+    void saveTrip({ serviceName, pickupLocation, destination, journeyDate, journeyTime, passengerCount, vehicleSize });
+  }, [status, serviceName, pickupLocation, destination, journeyDate, journeyTime, passengerCount, vehicleSize]);
 
   // Điều kiện vào trang (sau khi khai báo hook)
   if (!selectedService) return <Navigate to="/services" replace />;

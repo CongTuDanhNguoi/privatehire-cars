@@ -103,6 +103,28 @@ try {
   const alexBooking = r.json.bookings.find((b) => b.bookingRef === "PHC-24051");
   const emilyBooking = (await emily("GET", "/customer/bookings")).json.bookings[0];
 
+  // Trip saved automatically from the Availability screen (UK time → stored as UTC).
+  const trip = { serviceName: "Hotel Transfer", pickupLocation: "The Lowry Hotel, M3 5LH", destination: "Manchester Airport Terminal 2, M90 4FF", journeyDate: "2027-07-10", journeyTime: "09:00", passengerCount: 3, vehicleSize: "standard" };
+  r = await alex("POST", "/customer/bookings", trip);
+  check(
+    "save trip → 201 PHC-ref, BST 09:00 stored as 08:00Z, Standard Car",
+    r.status === 201 && /^PHC-\d{5}$/.test(r.json.booking.bookingRef) && r.json.booking.journeyDateTime === "2027-07-10T08:00:00.000Z" && r.json.booking.vehicleSize === "Standard Car",
+    JSON.stringify(r.json),
+  );
+  const savedTripId = r.json.booking?.id;
+  r = await alex("POST", "/customer/bookings", trip);
+  check("save same trip again → 200, no duplicate", r.status === 200 && r.json.booking.id === savedTripId, JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, journeyDate: "2027-12-01", journeyTime: "14:30" });
+  check("GMT 14:30 stored as 14:30Z", r.status === 201 && r.json.booking.journeyDateTime === "2027-12-01T14:30:00.000Z", JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, passengerCount: 5 });
+  check("save trip: 5 passengers in Standard Car → 400", r.status === 400 && r.json.error.fields?.passengerCount, JSON.stringify(r.json));
+  r = await alex("POST", "/customer/bookings", { ...trip, journeyDate: "2027-02-30" });
+  check("save trip: impossible date → 400", r.status === 400 && r.json.error.fields?.journeyDate, JSON.stringify(r.json));
+  r = await client()("POST", "/customer/bookings", trip);
+  check("save trip without cookie → 401", r.status === 401);
+  r = await emily("GET", "/customer/bookings");
+  check("saved trip not visible to another customer", !r.json.bookings.some((b) => b.id === savedTripId));
+
   r = await alex("POST", "/customer/enquiries", { type: "TRIP", bookingId: emilyBooking.id, subject: "Someone else's trip", message: "This booking belongs to another customer, it must be rejected." });
   check("TRIP enquiry with another customer's booking → 400", r.status === 400 && r.json.error.fields?.bookingId === "Choose the trip this enquiry is about.", JSON.stringify(r.json));
 
@@ -319,6 +341,60 @@ try {
   check("5th wrong code → too many attempts", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.", JSON.stringify(r.json));
   r = await newbie("POST", "/customer/auth/verify-email", { email: lockedEmail, code: code2 });
   check("right code after 5 wrong → still blocked", r.status === 400 && r.json.error.fields?.code === "Too many incorrect attempts. Request a new code.");
+
+  // ===== Forgot password (SCRUM-65) — Daniel (seeded, not used by later checks) =====
+  const fp = client();
+  const danielEmail = "daniel.brooks@example.com";
+  const resetCode = async (email) => (await fp("GET", `/dev/last-reset-code?email=${encodeURIComponent(email)}`)).json?.code;
+  for (let i = 0; i < 5; i++) await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Wrong1234" });
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Password123" });
+  check("reset: Daniel locked out before reset", r.status === 423, JSON.stringify(r.json));
+
+  r = await fp("POST", "/customer/auth/forgot-password", { email: "" });
+  check("forgot-password: empty email → 400 required", r.status === 400 && r.json.error.fields?.email === "Email address is required.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/forgot-password", { email: "nobody.here@example.com" });
+  check(
+    "forgot-password: unregistered email → 400 not registered",
+    r.status === 400 && r.json.error.fields?.email === "This email address is not registered. Please check it or sign up.",
+    JSON.stringify(r.json),
+  );
+  r = await fp("POST", "/customer/auth/forgot-password", { email: danielEmail });
+  check("forgot-password: registered email → 200", r.status === 200 && r.json.reset.expiresInMinutes === 10 && r.json.reset.resendInSeconds === 60, JSON.stringify(r.json));
+  const code4 = await resetCode(danielEmail);
+  check("forgot-password: 4-digit code issued", /^\d{4}$/.test(code4 ?? ""), String(code4));
+  r = await fp("POST", "/customer/auth/forgot-password", { email: danielEmail });
+  check("forgot-password: resend within 60 s → 429", r.status === 429 && r.json.error.retryAfterSeconds > 0, JSON.stringify(r.json));
+
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: "12" });
+  check("verify-reset-code: 2 digits → format error", r.status === 400 && r.json.error.fields?.code === "The code must be 4 digits.", JSON.stringify(r.json));
+  const wrong4 = code4 === "0000" ? "1111" : "0000";
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: wrong4 });
+  check("verify-reset-code: wrong code → 4 attempts left", r.status === 400 && r.json.error.fields?.code === "The code is incorrect. 4 attempts left.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: "nobody.here@example.com", code: "1234" });
+  check("verify-reset-code: unknown email → expired (no hint)", r.status === 400 && r.json.error.fields?.code === "This code has expired. Request a new code.");
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: code4 });
+  check("verify-reset-code: right code → reset token", r.status === 200 && /^[0-9a-f]{64}$/.test(r.json.resetToken ?? ""), JSON.stringify(r.json));
+  const token = r.json.resetToken;
+  r = await fp("POST", "/customer/auth/verify-reset-code", { email: danielEmail, code: code4 });
+  check("verify-reset-code: code cannot be used twice", r.status === 400 && r.json.error.fields?.code === "This code has expired. Request a new code.");
+
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "short", confirmPassword: "other" });
+  check(
+    "reset-password: weak + mismatch → registration rule messages",
+    r.status === 400 && r.json.error.fields?.password === "Password must be at least 8 characters." && r.json.error.fields?.confirmPassword === "Passwords do not match.",
+    JSON.stringify(r.json),
+  );
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: "f".repeat(64), password: "NewPass2026", confirmPassword: "NewPass2026" });
+  check("reset-password: wrong token → session expired", r.status === 400 && r.json.error.fields?.resetToken === "Your reset session has expired. Please request a new code.", JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "NewPass2026", confirmPassword: "NewPass2026" });
+  check("reset-password: valid → 200", r.status === 200 && r.json.ok === true, JSON.stringify(r.json));
+  r = await fp("POST", "/customer/auth/reset-password", { email: danielEmail, resetToken: token, password: "Another2026", confirmPassword: "Another2026" });
+  check("reset-password: token is one-time", r.status === 400 && r.json.error.fields?.resetToken);
+
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "Password123" });
+  check("after reset: old password rejected", r.status === 401);
+  r = await fp("POST", "/customer/auth/login", { email: danielEmail, password: "NewPass2026" });
+  check("after reset: new password logs in (lockout cleared)", r.status === 200 && r.json.user?.email === danielEmail, JSON.stringify(r.json));
 } catch (err) {
   failed++;
   console.error("Smoke test crashed:", err);

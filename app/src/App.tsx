@@ -5,6 +5,7 @@
 //   /register            Registration       (chỉ khi CHƯA đăng nhập)
 //   /verify-email        Nhập mã OTP xác nhận email (chỉ khi CHƯA đăng nhập)
 //   /register/complete   Registration Complete
+//   /forgot-password     Quên mật khẩu → /verify (mã 4 số) → /new (mật khẩu mới) → /done (SCRUM-65, chỉ khi CHƯA đăng nhập)
 //   /home                Home               (BẮT BUỘC đăng nhập)
 //   /services            Service Selection  (BẮT BUỘC đăng nhập)
 //   /journey             Journey Details    (BẮT BUỘC đăng nhập)
@@ -19,6 +20,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RegistrationCompletePage from "./pages/RegistrationCompletePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import { ChangePasswordPage, ForgotPasswordPage, PasswordChangedPage, VerifyResetCodePage } from "./pages/ForgotPasswordPages";
 import HomePage from "./pages/HomePage";
 import ServiceSelectionPage from "./pages/ServiceSelectionPage";
 import JourneyDetailsPage from "./pages/JourneyDetailsPage";
@@ -36,6 +38,10 @@ export default function App() {
       <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
       <Route path="/verify-email" element={<GuestOnly><VerifyEmailPage /></GuestOnly>} />
       <Route path="/register/complete" element={<RegistrationCompletePage />} />
+      <Route path="/forgot-password" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
+      <Route path="/forgot-password/verify" element={<GuestOnly><VerifyResetCodePage /></GuestOnly>} />
+      <Route path="/forgot-password/new" element={<GuestOnly><ChangePasswordPage /></GuestOnly>} />
+      <Route path="/forgot-password/done" element={<GuestOnly><PasswordChangedPage /></GuestOnly>} />
 
       <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
       <Route path="/services" element={<RequireAuth><ServiceSelectionPage /></RequireAuth>} />

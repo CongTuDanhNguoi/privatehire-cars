@@ -64,6 +64,17 @@ export const listMyEnquiries = () => call<{ enquiries: MyEnquiry[] }>("/enquirie
 export const sendEnquiry = (body: { type: EnquiryType; bookingId: number | null; subject: string; message: string }) =>
   call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
 
+// Lưu chuyến khi xe còn trống (không có màn Booking/Payment — AC-15). Gửi lại cùng chuyến thì server trả chuyến cũ.
+export const saveTrip = (body: {
+  serviceName: string;
+  pickupLocation: string;
+  destination: string;
+  journeyDate: string; // YYYY-MM-DD
+  journeyTime: string; // HH:mm, giờ UK
+  passengerCount: number;
+  vehicleSize: string; // "standard" | "seven-seater"
+}) => call<{ booking: Booking }>("/bookings", { method: "POST", body });
+
 // Giờ chuyến xe là giờ UK: hiển thị đúng giờ London dù máy đang ở múi giờ nào.
 export function formatUkDateTime(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {
