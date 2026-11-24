@@ -158,6 +158,7 @@ await test("CK-08", "July trip shows BST, not GMT", async () => {
   const text = await page.innerText("[data-testid=receipt-page]");
   expect(text.includes("09:00") && text.includes("BST"), "no BST label on the receipt");
   expect(!text.includes("09:00 GMT"), "a July trip is labelled GMT");
+  expect(text.toUpperCase().includes("TRIP TRAJECTORY"), "receipt has no Trip trajectory heading");
   return julyRef;
 });
 
