@@ -113,6 +113,18 @@ if (browser) {
     assert(confirmError && confirmError.length > 0, "Confirm password error missing");
   });
 
+  // Luồng AC-14: sau Create Account phải nhập mã OTP. Email thử không nhận được thư thật,
+  // backend MOCK giữ mã ở /api/dev (giống selftest.mjs).
+  async function enterOtp(email) {
+    await page.waitForURL("**/verify-email", { timeout: 5000 });
+    const res = await page.request.get(`${BASE_URL}/api/dev/last-verification-code?email=${encodeURIComponent(email)}`);
+    assert(res.ok(), `Cannot read the OTP (HTTP ${res.status()})`);
+    const { code } = await res.json();
+    await page.fill("#code", code);
+    await page.click('[data-testid="verify-code"]');
+    await wait(800);
+  }
+
   // T04: Fill valid form data
   const testEmail = `newcustomer_${Date.now()}@testphc.co.uk`;
   const testPassword = "Password123!";
@@ -133,6 +145,7 @@ if (browser) {
     await page.click("button[type=submit]");
     await wait(400);
 
+    await enterOtp(testEmail);
     const currentUrl = page.url();
     assert(new URL(currentUrl).pathname === "/register/complete", `Expected /register/complete, got ${currentUrl}`);
   });
@@ -189,6 +202,7 @@ if (browser) {
     await page.click("button[type=submit]");
     await wait(400);
 
+    await enterOtp(secondEmail);
     assert(new URL(page.url()).pathname === "/register/complete", "Must be on /register/complete");
 
     // Click Go to Login
@@ -216,10 +230,7 @@ if (browser) {
     await wait(400);
 
     assert(new URL(page.url()).pathname === "/home", `Expected /home after login, got ${page.url()}`);
-
-    // Verify session now exists
-    const session = await page.evaluate(() => localStorage.getItem("phc_session"));
-    assert(session && session.length > 0, "phc_session should exist after login");
+    // Session check removed: the app keeps the session in an HttpOnly cookie, not localStorage (approved 2026-11-25).
   });
 
   await browser.close();
