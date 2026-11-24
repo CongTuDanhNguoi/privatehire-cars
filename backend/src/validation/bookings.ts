@@ -1,5 +1,5 @@
 // Request schema for saving a trip (POST /api/customer/bookings).
-// The app saves a trip automatically once a vehicle is available — there is no booking/payment screen (AC-15).
+// The app saves a trip automatically once a vehicle is available — the customer then reviews the price and pays (SCRUM-72…90).
 import { z } from "zod";
 
 // Same titles as app/src/data/services.ts (what Staff Portal shows).

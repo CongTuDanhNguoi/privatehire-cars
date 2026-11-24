@@ -199,7 +199,7 @@ Home ──tab Profile──► My Profile ──Log Out──► Login
 - Email trùng được báo **khi bấm Create Account** (server trả lỗi), không còn báo khi rời ô.
 - Sai mật khẩu 5 lần liên tiếp → khoá 15 phút (lưu ở server).
 - Phần chuyển sang MySQL không đổi giao diện màn nào; thay đổi giao diện của sprint-1 (Registration Complete, Login điền sẵn email, Journey Details, Vehicle Size, Availability) là của nhóm. `/support` là màn mới.
-- **Không có** màn Booking Confirmation / Payment — đúng phạm vi đồ án.
+- **Có** checkout giả lập (giá → thanh toán → biên lai), không có cổng thanh toán thật.
 
 **Contact Support (`/support`)**: chọn *General enquiry* hoặc *About a trip* (chọn 1 chuyến của chính mình, giờ hiển thị
 theo giờ UK), nhập Subject + Message → **Send enquiry** → hiện mã **ENQ-xxxxxx**. Câu hỏi xuất hiện ngay trong Inbox
@@ -361,7 +361,7 @@ Chạy khi hệ thống đang bật (`docker compose up -d`). Lần đầu cần
 Tiêu chí app Customer: AC-01 khách chưa đăng nhập bị chặn · AC-02 Welcome → Login/Register · AC-03 lỗi Login ·
 AC-04 Login → Home · AC-05 Book a Ride → Services · AC-06 Continue tắt khi chưa chọn · AC-07 6 dịch vụ, chọn đúng 1 ·
 AC-08 Continue → Journey đúng dịch vụ · AC-09 Change → Journey cập nhật · AC-10 Home ↔ Profile · AC-11 Log Out ·
-AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Go to Login → Home · AC-15 không có Confirmation/Payment.
+AC-12 lỗi Register · AC-13 email trùng · AC-14 Register → Complete → Go to Login → Home · AC-15 checkout: giá → thanh toán giả lập → biên lai.
 
 ## 12. Kịch bản demo
 
@@ -398,7 +398,7 @@ Không commit `backend/.env` (chứa mật khẩu MySQL và key EmailJS — đã
 
 ## 14. Giới hạn hiện tại
 
-- Không có Booking Confirmation, Payment; không quản lý tài xế, doanh thu, điều phối xe (ngoài phạm vi).
+- Không có cổng thanh toán thật; không quản lý tài xế, doanh thu, điều phối xe (ngoài phạm vi).
 - Booking cho Contact Support / Staff Portal là **dữ liệu mẫu** trong MySQL; luồng Vehicle Size / Availability của app dùng dữ liệu đội xe giả lập phía trình duyệt, chưa ghi booking vào database.
 - `/support` không có nút dẫn tới từ màn cũ (yêu cầu không đổi UI) — phải gõ đường dẫn.
 - Staff Portal: chỉ 2 tài khoản seed, không có trang quản lý tài khoản / phân quyền; khách chưa trả lời lại được qua email (1 chiều).

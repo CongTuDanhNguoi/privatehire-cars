@@ -74,7 +74,7 @@ export const sendEnquiry = (body: {
   tripSnapshot?: TripSnapshot | null;
 }) => call<{ enquiry: { id: number; code: string; status: string; createdAt: string } }>("/enquiries", { method: "POST", body });
 
-// Lưu chuyến khi xe còn trống (không có màn Booking/Payment — AC-15). Gửi lại cùng chuyến thì server trả chuyến cũ.
+// Lưu chuyến khi xe còn trống (để xem giá và thanh toán — SCRUM-72). Gửi lại cùng chuyến thì server trả chuyến cũ.
 export const saveTrip = (body: {
   serviceName: string;
   pickupLocation: string;
