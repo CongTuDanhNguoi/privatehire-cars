@@ -6,6 +6,49 @@ export interface Staff {
   email: string;
 }
 
+export interface CustomerSearchCandidate {
+  id: number;
+  fullName: string;
+  phone: string | null;
+  maskedEmail: string;
+}
+
+export interface VerifiedCustomerProfile {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  homeAddress: string | null;
+  cardLast4: string | null;
+}
+
+export interface StaffCustomerBooking {
+  id: number;
+  bookingRef: string;
+  serviceName: string;
+  pickupLocation: string;
+  destination: string;
+  journeyDateTime: string;
+  vehicleSize: string;
+  status: "SAVED" | "PAID";
+}
+
+export interface SimulatedOtpResponse {
+  deliveryMode: "SIMULATION";
+  simulation: true;
+  phone: string;
+  expiresInMinutes: number;
+  maxAttempts: number;
+  simulatedCode?: string;
+}
+
+export interface NewCustomerBeginResponse {
+  allowed: true;
+  phoneNormalized: string;
+  entryMode: "STAFF_ASSISTED_REGISTRATION_ENTRY";
+  message: string;
+}
+
 export interface EmailSettings {
   provider: "EMAILJS" | "MOCK";
   testMode: boolean;

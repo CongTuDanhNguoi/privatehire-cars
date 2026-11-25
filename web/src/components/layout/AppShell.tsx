@@ -65,6 +65,20 @@ function Sidebar({ awaiting, signingOut, onSignOut }: ShellProps) {
               <AwaitingBadge awaiting={awaiting} />
             </NavLink>
           </li>
+          <li>
+            <NavLink
+              to="/customers"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-label font-semibold text-ink transition-colors duration-150 hover:bg-muted/50",
+                  isActive && "bg-primary/15 text-primary-pressed hover:bg-primary/20",
+                )
+              }
+            >
+              <Icon name="search" size={18} />
+              <span className="flex-1">Customer Lookup</span>
+            </NavLink>
+          </li>
         </ul>
       </nav>
 
@@ -119,6 +133,13 @@ function MobileHeader({ awaiting, signingOut, onSignOut }: ShellProps) {
           <Icon name="inbox" size={18} />
           <span className="truncate">Enquiries</span>
           <AwaitingBadge awaiting={awaiting} />
+        </NavLink>
+        <NavLink
+          to="/customers"
+          className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-label font-semibold text-ink hover:bg-muted/60"
+        >
+          <Icon name="search" size={18} />
+          <span className="truncate">Customers</span>
         </NavLink>
       </nav>
       {staff && <Avatar name={staff.fullName} />}

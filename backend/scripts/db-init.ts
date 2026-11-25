@@ -6,6 +6,7 @@ import path from "node:path";
 import type { RowDataPacket } from "mysql2/promise";
 import { BE_ROOT, connect, dbName } from "./connect.js";
 import { seedDatabase } from "./seed.js";
+import { normalizeSearchPhone } from "../src/validation/customerSearch.js";
 
 const name = dbName();
 
@@ -48,6 +49,43 @@ async function upgradeEmailVerification() {
   console.log("Upgraded: email verification (existing customers marked as verified).");
 }
 
+// SCRUM-106 additive upgrade: adds customers.phone_normalized + index and backfills existing rows.
+async function upgradeCustomerPhoneNormalized() {
+  const [cols] = await conn.query<RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'customers' AND column_name = 'phone_normalized'",
+    [name],
+  );
+  if (cols.length > 0) return;
+  await conn.query("ALTER TABLE customers ADD COLUMN phone_normalized VARCHAR(30) NULL AFTER phone");
+  await conn.query("CREATE INDEX idx_customers_phone_norm ON customers (phone_normalized)");
+  const [customers] = await conn.query<RowDataPacket[]>("SELECT id, phone FROM customers WHERE phone IS NOT NULL");
+  for (const row of customers) {
+    const norm = normalizeSearchPhone(String(row.phone));
+    if (norm) {
+      await conn.execute("UPDATE customers SET phone_normalized = ? WHERE id = ?", [norm, row.id]);
+    }
+  }
+  console.log("Upgraded: customers.phone_normalized added and backfilled.");
+}
+
+// SCRUM-107 additive upgrade: creates caller_verifications table if missing.
+async function upgradeCallerVerifications() {
+  await conn.query(`CREATE TABLE IF NOT EXISTS caller_verifications (
+      staff_id         INT UNSIGNED PRIMARY KEY,
+      customer_id      INT UNSIGNED NULL,
+      phone_normalized VARCHAR(30) NOT NULL,
+      session_iat_ms   BIGINT UNSIGNED NOT NULL,
+      code_hash        CHAR(64) NULL,
+      expires_at       DATETIME NULL,
+      attempts         TINYINT UNSIGNED NOT NULL DEFAULT 0,
+      invalidated_at   DATETIME NULL,
+      verified_at      DATETIME NULL,
+      updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (staff_id)    REFERENCES staff(id) ON DELETE CASCADE,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+}
+
 try {
   await conn.query(`CREATE DATABASE IF NOT EXISTS \`${name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
   await conn.changeUser({ database: name });
@@ -58,6 +96,8 @@ try {
   if (Number(rows[0].n) > 0) {
     console.log(`Database "${name}" already has ${rows[0].n} tables — keeping existing data.`);
     await upgradeEmailVerification();
+    await upgradeCustomerPhoneNormalized();
+    await upgradeCallerVerifications();
   } else {
     const schema = await readFile(path.join(BE_ROOT, "sql", "001_schema.sql"), "utf8");
     await conn.query(schema);

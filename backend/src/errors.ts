@@ -9,6 +9,11 @@ export type ErrorCode =
   | "INVALID_CREDENTIALS"
   | "ACCOUNT_LOCKED"
   | "FORBIDDEN"
+  | "CALLER_NOT_VERIFIED"
+  | "CALLER_OTP_INCORRECT"
+  | "CALLER_OTP_EXPIRED"
+  | "CALLER_OTP_EXHAUSTED"
+  | "CALLER_OTP_INVALID"
   | "NOT_FOUND"
   | "CONFLICT"
   | "EMAIL_SEND_FAILED"
@@ -22,6 +27,11 @@ const STATUS: Record<ErrorCode, number> = {
   INVALID_CREDENTIALS: 401,
   ACCOUNT_LOCKED: 423,
   FORBIDDEN: 403,
+  CALLER_NOT_VERIFIED: 403,
+  CALLER_OTP_INCORRECT: 400,
+  CALLER_OTP_EXPIRED: 400,
+  CALLER_OTP_EXHAUSTED: 400,
+  CALLER_OTP_INVALID: 400,
   NOT_FOUND: 404,
   CONFLICT: 409,
   EMAIL_SEND_FAILED: 502,
@@ -38,7 +48,14 @@ export class AppError extends Error {
     readonly code: ErrorCode,
     message: string,
     // `response` is only used by EMAIL_SEND_FAILED (the saved FAILED response record).
-    readonly extra: { fields?: FieldErrors; minutesLeft?: number; retryAfterSeconds?: number; email?: string; response?: unknown } = {},
+    readonly extra: {
+      fields?: FieldErrors;
+      minutesLeft?: number;
+      retryAfterSeconds?: number;
+      attemptsRemaining?: number;
+      email?: string;
+      response?: unknown;
+    } = {},
   ) {
     super(message);
     this.status = STATUS[code];

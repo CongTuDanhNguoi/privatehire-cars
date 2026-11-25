@@ -11,15 +11,17 @@ CREATE TABLE staff (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE customers (
-  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  full_name     VARCHAR(100) NOT NULL,
-  email         VARCHAR(254) NOT NULL UNIQUE,      -- always stored trimmed + lowercase
-  phone         VARCHAR(30)  NULL,
-  home_address  VARCHAR(255) NULL,
-  card_last4    CHAR(4)      NULL,                  -- never the full card number, never the CVV
-  password_hash VARCHAR(100) NOT NULL,
-  email_verified_at DATETIME NULL,                  -- NULL until the emailed one-time code is entered
-  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  full_name        VARCHAR(100) NOT NULL,
+  email            VARCHAR(254) NOT NULL UNIQUE,      -- always stored trimmed + lowercase
+  phone            VARCHAR(30)  NULL,
+  phone_normalized VARCHAR(30)  NULL,                  -- canonicalized digits for caller search (SCRUM-106)
+  home_address     VARCHAR(255) NULL,
+  card_last4       CHAR(4)      NULL,                  -- never the full card number, never the CVV
+  password_hash    VARCHAR(100) NOT NULL,
+  email_verified_at DATETIME NULL,                     -- NULL until the emailed one-time code is entered
+  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_customers_phone_norm (phone_normalized)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- One active email-verification code per customer (6 digits, stored hashed).
@@ -125,4 +127,21 @@ CREATE TABLE login_attempts (
   fail_count   TINYINT UNSIGNED NOT NULL DEFAULT 0,
   locked_until DATETIME NULL,
   PRIMARY KEY (scope, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Simulated caller telephone OTP & session-bound verification grants (SCRUM-107).
+-- Completely independent from email_verifications / email_verified_at.
+CREATE TABLE caller_verifications (
+  staff_id         INT UNSIGNED PRIMARY KEY,
+  customer_id      INT UNSIGNED NULL,
+  phone_normalized VARCHAR(30)  NOT NULL,
+  session_iat_ms   BIGINT UNSIGNED NOT NULL,
+  code_hash        CHAR(64)     NULL,
+  expires_at       DATETIME     NULL,
+  attempts         TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  invalidated_at   DATETIME     NULL,
+  verified_at      DATETIME     NULL,
+  updated_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (staff_id)    REFERENCES staff(id) ON DELETE CASCADE,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
