@@ -124,15 +124,14 @@ function codesMatch(submitted: string, storedHashHex: string): boolean {
 }
 
 function buildOtpResponse(displayPhone: string, code: string): SimulatedOtpResult {
-  // Never expose demonstration codes in production responses or application logs.
-  const isProd = process.env.NODE_ENV === "production";
+  // Demonstration code is returned only when CALLER_OTP_SIMULATION=true; it is never logged.
   return {
     deliveryMode: "SIMULATION",
     simulation: true,
     phone: displayPhone,
     expiresInMinutes: CALLER_OTP_TTL_MINUTES,
     maxAttempts: CALLER_OTP_MAX_ATTEMPTS,
-    ...(!isProd ? { simulatedCode: code } : {}),
+    ...(config.callerOtpSimulation ? { simulatedCode: code } : {}),
   };
 }
 
@@ -213,16 +212,13 @@ async function verifyPendingOtp(params: {
     if (remaining === 0) {
       await pool.execute(
         `UPDATE caller_verifications
-         SET attempts = ?, invalidated_at = UTC_TIMESTAMP(), code_hash = NULL
+         SET attempts = attempts + 1, invalidated_at = UTC_TIMESTAMP(), code_hash = NULL
          WHERE staff_id = ?`,
-        [nextAttempts, params.staffId],
+        [params.staffId],
       );
       throw new AppError("CALLER_OTP_EXHAUSTED", CALLER_OTP_MESSAGES.exhausted, { attemptsRemaining: 0 });
     }
-    await pool.execute("UPDATE caller_verifications SET attempts = ? WHERE staff_id = ?", [
-      nextAttempts,
-      params.staffId,
-    ]);
+    await pool.execute("UPDATE caller_verifications SET attempts = attempts + 1 WHERE staff_id = ?", [params.staffId]);
     throw new AppError("CALLER_OTP_INCORRECT", CALLER_OTP_MESSAGES.incorrect(remaining), {
       attemptsRemaining: remaining,
     });
@@ -234,6 +230,24 @@ async function verifyPendingOtp(params: {
      WHERE staff_id = ?`,
     [params.staffId],
   );
+}
+
+const RESEND_COOLDOWN_SECONDS = 60;
+
+// Blocks a new code within 60 s of the last one (last send = expires_at - TTL).
+async function assertResendAllowed(staffId: number): Promise<void> {
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT TIMESTAMPDIFF(SECOND, expires_at - INTERVAL ? MINUTE, UTC_TIMESTAMP()) AS elapsed
+     FROM caller_verifications WHERE staff_id = ? AND expires_at IS NOT NULL LIMIT 1`,
+    [CALLER_OTP_TTL_MINUTES, staffId],
+  );
+  const elapsed = rows[0] ? Number(rows[0].elapsed) : Infinity;
+  if (elapsed < RESEND_COOLDOWN_SECONDS) {
+    const wait = RESEND_COOLDOWN_SECONDS - elapsed;
+    throw new AppError("TOO_MANY_REQUESTS", `Please wait ${wait} seconds before requesting a new code.`, {
+      retryAfterSeconds: wait,
+    });
+  }
 }
 
 export async function sendExistingCustomerOtp(
@@ -252,6 +266,7 @@ export async function sendExistingCustomerOtp(
     throw new AppError("VALIDATION_ERROR", "This customer account has no telephone number on file.");
   }
 
+  await assertResendAllowed(staffId);
   const code = generateSixDigitOtp();
   await upsertPendingOtp({
     staffId,
@@ -287,6 +302,7 @@ export async function sendNewCustomerOtp(
   if (phoneErr) throw validationError({ phone: phoneErr }, phoneErr);
   const normalized = normalizeSearchPhone(rawPhone);
 
+  await assertResendAllowed(staffId);
   const code = generateSixDigitOtp();
   await upsertPendingOtp({
     staffId,

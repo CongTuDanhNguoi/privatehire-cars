@@ -57,7 +57,7 @@ describe("SCRUM-106 Live Isolated MySQL & API Integration", () => {
     try {
       // Establish a valid pre-upgrade schema (without phone_normalized / idx_customers_phone_norm)
       await conn.query("SET FOREIGN_KEY_CHECKS = 0");
-      await conn.query("DROP TABLE IF EXISTS login_attempts, enquiry_status_history, enquiry_responses, enquiries, bookings, password_resets, email_verifications, customers, staff");
+      await conn.query("DROP TABLE IF EXISTS caller_verifications, login_attempts, enquiry_status_history, enquiry_responses, enquiries, bookings, password_resets, email_verifications, customers, staff");
       await conn.query("SET FOREIGN_KEY_CHECKS = 1");
 
       await conn.query(`
@@ -119,7 +119,7 @@ describe("SCRUM-106 Live Isolated MySQL & API Integration", () => {
     const conn = await openTestConn();
     try {
       await conn.query("SET FOREIGN_KEY_CHECKS = 0");
-      await conn.query("DROP TABLE IF EXISTS login_attempts, enquiry_status_history, enquiry_responses, enquiries, bookings, password_resets, email_verifications, customers, staff");
+      await conn.query("DROP TABLE IF EXISTS caller_verifications, login_attempts, enquiry_status_history, enquiry_responses, enquiries, bookings, password_resets, email_verifications, customers, staff");
       await conn.query("SET FOREIGN_KEY_CHECKS = 1");
 
       const out = runTsx("scripts/db-init.ts");

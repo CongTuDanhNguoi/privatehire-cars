@@ -3,6 +3,7 @@ import type { RowDataPacket } from "mysql2/promise";
 import { pool } from "../db.js";
 import { AppError, validationError } from "../errors.js";
 import { normalizeSearchPhone, validateSearchPhone } from "../validation/customerSearch.js";
+import { ensureBookingPaymentColumns } from "./checkoutService.js";
 
 export interface CustomerSearchCandidate {
   id: number;
@@ -77,7 +78,7 @@ export async function searchCustomersByPhone(rawPhone: string): Promise<Customer
   if (phoneError) throw validationError({ phone: phoneError }, phoneError);
 
   const normalized = normalizeSearchPhone(rawPhone);
-  // Support both the indexed phone_normalized column and legacy rows where phone_normalized is null.
+  // Older rows got phone_normalized from the db-init backfill, so one indexed lookup covers every customer.
   const [rows] = await pool.execute<CandidateRow[]>(
     `SELECT id, full_name, phone, email
      FROM customers
@@ -115,6 +116,8 @@ export async function getVerifiedCustomerProfile(customerId: number): Promise<Ve
 }
 
 export async function listVerifiedCustomerBookings(customerId: number): Promise<StaffCustomerBooking[]> {
+  // Older databases (production) get bookings.status/fare columns on first use.
+  await ensureBookingPaymentColumns();
   const [rows] = await pool.execute<BookingRow[]>(
     `SELECT id, booking_ref, service_name, pickup_location, destination, journey_datetime, vehicle_size, status
      FROM bookings
