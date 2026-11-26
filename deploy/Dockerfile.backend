@@ -5,6 +5,8 @@ COPY backend/package*.json backend/
 RUN cd backend && npm ci --no-audit --no-fund
 COPY backend backend
 COPY app/src/validation app/src/validation
+# Checkout fares are computed on the server from the shared price table.
+COPY app/src/data/pricing.ts app/src/data/pricing.ts
 WORKDIR /workspace/backend
 ENV NODE_ENV=production
 # db:init creates + seeds the database only when it is empty, and upgrades older schemas.
