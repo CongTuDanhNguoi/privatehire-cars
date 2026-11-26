@@ -73,7 +73,7 @@ export async function listCustomerBookings(customerId: number): Promise<Booking[
 }
 
 // Journey date/time is UK local time; the DB stores UTC. Works across GMT/BST changes.
-function londonToUtc(date: string, time: string): Date {
+export function londonToUtc(date: string, time: string): Date {
   const fmt = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
     hourCycle: "h23",

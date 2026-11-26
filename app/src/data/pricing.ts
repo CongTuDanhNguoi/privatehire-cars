@@ -19,10 +19,14 @@ export interface FareQuote {
 }
 
 // null khi nhãn xe không có trong bảng giá.
-export function quoteFare(vehicleLabel: string): FareQuote | null {
+export function quoteFare(
+  vehicleLabel: string,
+  options: { applyOnlineDiscount?: boolean } = {},
+): FareQuote | null {
   const basePence = BASE_FARE_PENCE[vehicleLabel];
   if (basePence === undefined) return null;
-  const discountPence = Math.round((basePence * ONLINE_DISCOUNT_PERCENT) / 100);
+  const applyDiscount = options.applyOnlineDiscount ?? true;
+  const discountPence = applyDiscount ? Math.round((basePence * ONLINE_DISCOUNT_PERCENT) / 100) : 0;
   return { basePence, discountPence, totalPence: basePence - discountPence };
 }
 

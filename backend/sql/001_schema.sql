@@ -48,22 +48,25 @@ CREATE TABLE password_resets (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE bookings (
-  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  booking_ref      VARCHAR(20)  NOT NULL UNIQUE,    -- e.g. PHC-24051
-  customer_id      INT UNSIGNED NOT NULL,
-  service_name     VARCHAR(60)  NOT NULL,           -- e.g. 'Airport Transfer'
-  pickup_location  VARCHAR(255) NOT NULL,
-  destination      VARCHAR(255) NOT NULL,
-  journey_datetime DATETIME     NOT NULL,
-  passenger_count  TINYINT UNSIGNED NOT NULL,
-  vehicle_size     VARCHAR(40)  NOT NULL,           -- e.g. 'Seven-Seater'
-  status           ENUM('SAVED','PAID') NOT NULL DEFAULT 'SAVED',
-  fare_pence       INT UNSIGNED NULL,               -- total paid in pence, frozen at payment
-  discount_pence   INT UNSIGNED NULL,               -- online discount in pence, frozen at payment
-  notify_phone     VARCHAR(30)  NULL,
-  payment_ref      VARCHAR(20)  NULL,               -- e.g. TXN-48213
-  paid_at          DATETIME     NULL,               -- UTC
-  created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  booking_ref         VARCHAR(20)  NOT NULL UNIQUE,    -- e.g. PHC-24051
+  customer_id         INT UNSIGNED NOT NULL,
+  service_name        VARCHAR(60)  NOT NULL,           -- e.g. 'Airport Transfer'
+  pickup_location     VARCHAR(255) NOT NULL,
+  destination         VARCHAR(255) NOT NULL,
+  journey_datetime    DATETIME     NOT NULL,
+  passenger_count     TINYINT UNSIGNED NOT NULL,
+  vehicle_size        VARCHAR(40)  NOT NULL,           -- e.g. 'Seven-Seater'
+  status              ENUM('SAVED','PAID') NOT NULL DEFAULT 'SAVED',
+  journey_status      ENUM('CONFIRMED','CANCELLED','COMPLETED') NOT NULL DEFAULT 'CONFIRMED',
+  assigned_vehicle_id INT UNSIGNED NULL,
+  assigned_driver_id  INT UNSIGNED NULL,
+  fare_pence          INT UNSIGNED NULL,               -- total paid in pence, frozen at payment
+  discount_pence      INT UNSIGNED NULL,               -- online discount in pence, frozen at payment
+  notify_phone        VARCHAR(30)  NULL,
+  payment_ref         VARCHAR(20)  NULL,               -- e.g. TXN-48213
+  paid_at             DATETIME     NULL,               -- UTC
+  created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -144,4 +147,30 @@ CREATE TABLE caller_verifications (
   updated_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (staff_id)    REFERENCES staff(id) ON DELETE CASCADE,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Fleet vehicles (SCRUM-60, BD-01: INACTIVE by default).
+CREATE TABLE vehicles (
+  id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  registration_number     VARCHAR(20) NOT NULL,
+  registration_normalized VARCHAR(20) NOT NULL UNIQUE,
+  make                    VARCHAR(60) NOT NULL,
+  model                   VARCHAR(60) NOT NULL,
+  colour                  VARCHAR(40) NOT NULL,
+  passenger_capacity      TINYINT UNSIGNED NOT NULL,
+  status                  ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
+  created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Fleet drivers (SCRUM-61, BD-01: INACTIVE by default).
+CREATE TABLE drivers (
+  id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  full_name          VARCHAR(100) NOT NULL,
+  phone              VARCHAR(30)  NOT NULL,
+  phone_normalized   VARCHAR(30)  NOT NULL,
+  email              VARCHAR(254) NOT NULL,
+  licence_number     VARCHAR(40)  NOT NULL,
+  licence_normalized VARCHAR(40)  NOT NULL UNIQUE,
+  status             ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
+  created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -7,9 +7,12 @@ import { customerAuthRouter } from "./routes/customerAuth.js";
 import { customerBookingsRouter } from "./routes/customerBookings.js";
 import { customerEnquiriesRouter } from "./routes/customerEnquiries.js";
 import { staffAuthRouter } from "./routes/staffAuth.js";
+import { staffAvailabilityRouter } from "./routes/staffAvailability.js";
 import { staffCustomersRouter } from "./routes/staffCustomers.js";
+import { staffDriversRouter } from "./routes/staffDrivers.js";
 import { staffEnquiriesRouter } from "./routes/staffEnquiries.js";
 import { staffResponsesRouter } from "./routes/staffResponses.js";
+import { staffVehiclesRouter } from "./routes/staffVehicles.js";
 import { devRouter } from "./routes/dev.js";
 
 export function createApp() {
@@ -33,8 +36,11 @@ export function createApp() {
   app.use("/api/customer/bookings", customerBookingsRouter);
   app.use("/api/customer/enquiries", customerEnquiriesRouter);
   app.use("/api/staff/auth", staffAuthRouter);
+  app.use("/api/staff/availability", staffAvailabilityRouter);
   app.use("/api/staff/customers", staffCustomersRouter);
+  app.use("/api/staff/drivers", staffDriversRouter);
   app.use("/api/staff/enquiries", staffEnquiriesRouter);
+  app.use("/api/staff/vehicles", staffVehiclesRouter);
   app.use("/api/staff", staffResponsesRouter); // /responses/:id/retry, /email-settings
   // Test helper: read a verification code that was not really emailed (MOCK provider / reserved test address).
   // Never mounted in production.
