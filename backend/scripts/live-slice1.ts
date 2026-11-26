@@ -95,15 +95,17 @@ describe("SCRUM-109 Slice 1 Live MySQL Integration (Vehicles, Drivers, Availabil
     assert.equal(badDrv.status, 400);
   });
 
-  it("persists vehicles & drivers as INACTIVE, rejects case/space duplicates, and supports activation", async () => {
+  it("persists vehicles & drivers as INACTIVE, rejects case/space duplicates, and enforces category + capacity", async () => {
+    // Vehicle 1: omitted vehicleCategory -> defaults to "standard", 5 seats (must NOT match seven-seater!)
     const v1Res = await fetch(`${baseUrl}/staff/vehicles`, {
       method: "POST",
       headers: { Cookie: staffCookie, "Content-Type": "application/json" },
-      body: JSON.stringify({ registrationNumber: "AB12 CDE", make: "Toyota", model: "Prius", colour: "Black", passengerCapacity: 4 }),
+      body: JSON.stringify({ registrationNumber: "AB12 CDE", make: "Toyota", model: "Prius+", colour: "Black", passengerCapacity: 5 }),
     });
     assert.equal(v1Res.status, 201);
-    const { vehicle: v1 } = (await v1Res.json()) as { vehicle: { id: number; status: string } };
+    const { vehicle: v1 } = (await v1Res.json()) as { vehicle: { id: number; status: string; vehicleCategory: string } };
     assert.equal(v1.status, "INACTIVE");
+    assert.equal(v1.vehicleCategory, "standard");
 
     // Duplicate registration ignoring case & spaces -> 409
     const vDup = await fetch(`${baseUrl}/staff/vehicles`, {
@@ -113,14 +115,39 @@ describe("SCRUM-109 Slice 1 Live MySQL Integration (Vehicles, Drivers, Availabil
     });
     assert.equal(vDup.status, 409);
 
-    // 8-seat minibus allowed
+    // Vehicle 2: explicit "seven-seater" with 7 seats
     const v2Res = await fetch(`${baseUrl}/staff/vehicles`, {
       method: "POST",
       headers: { Cookie: staffCookie, "Content-Type": "application/json" },
-      body: JSON.stringify({ registrationNumber: "XY99 MPV", make: "Ford", model: "Tourneo", colour: "Silver", passengerCapacity: 8 }),
+      body: JSON.stringify({
+        registrationNumber: "XY99 MPV",
+        make: "Ford",
+        model: "Tourneo",
+        colour: "Silver",
+        passengerCapacity: 7,
+        vehicleCategory: "seven-seater",
+      }),
     });
     assert.equal(v2Res.status, 201);
-    const { vehicle: v2 } = (await v2Res.json()) as { vehicle: { id: number } };
+    const { vehicle: v2 } = (await v2Res.json()) as { vehicle: { id: number; vehicleCategory: string } };
+    assert.equal(v2.vehicleCategory, "seven-seater");
+
+    // Vehicle 3: explicit "seven-seater" with only 4 seats (tests INSUFFICIENT_CAPACITY for 5 passengers)
+    const v3Res = await fetch(`${baseUrl}/staff/vehicles`, {
+      method: "POST",
+      headers: { Cookie: staffCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        registrationNumber: "SM04 MPV",
+        make: "Kia",
+        model: "Carens",
+        colour: "White",
+        passengerCapacity: 4,
+        vehicleCategory: "seven-seater",
+      }),
+    });
+    assert.equal(v3Res.status, 201);
+    const { vehicle: v3 } = (await v3Res.json()) as { vehicle: { id: number; vehicleCategory: string } };
+    assert.equal(v3.vehicleCategory, "seven-seater");
 
     const d1Res = await fetch(`${baseUrl}/staff/drivers`, {
       method: "POST",
@@ -156,8 +183,13 @@ describe("SCRUM-109 Slice 1 Live MySQL Integration (Vehicles, Drivers, Availabil
     assert.equal(bBody.staffQuotes.standard.totalPence, 9500);
     assert.equal(bBody.staffQuotes["seven-seater"].totalPence, 13500);
 
-    // Activate v1, v2, d1
-    for (const pathUrl of [`/staff/vehicles/${v1.id}/status`, `/staff/vehicles/${v2.id}/status`, `/staff/drivers/${d1.id}/status`]) {
+    // Activate v1, v2, v3, d1
+    for (const pathUrl of [
+      `/staff/vehicles/${v1.id}/status`,
+      `/staff/vehicles/${v2.id}/status`,
+      `/staff/vehicles/${v3.id}/status`,
+      `/staff/drivers/${d1.id}/status`,
+    ]) {
       const act = await fetch(`${baseUrl}${pathUrl}`, {
         method: "PATCH",
         headers: { Cookie: staffCookie, "Content-Type": "application/json" },
@@ -166,7 +198,10 @@ describe("SCRUM-109 Slice 1 Live MySQL Integration (Vehicles, Drivers, Availabil
       assert.equal(act.status, 200);
     }
 
-    // For seven-seater (5 passengers): v1 (4 seats) is INSUFFICIENT_CAPACITY, v2 (8 seats) is available
+    // For seven-seater (5 passengers):
+    // - v1 (5-seat standard) -> CATEGORY_MISMATCH (NOT classified as seven-seater by seat count!)
+    // - v3 (4-seat seven-seater) -> INSUFFICIENT_CAPACITY
+    // - v2 (7-seat seven-seater) -> available
     const avail7 = await fetch(`${baseUrl}/staff/availability?journeyDate=2026-12-01&journeyTime=14:00&passengerCount=5&vehicleSize=seven-seater`, {
       headers: { Cookie: staffCookie },
     });
@@ -175,8 +210,25 @@ describe("SCRUM-109 Slice 1 Live MySQL Integration (Vehicles, Drivers, Availabil
       drivers: { available: Array<{ id: number }> };
     };
     assert.deepEqual(a7Body.vehicles.available.map((v) => v.id), [v2.id]);
-    assert.deepEqual(a7Body.vehicles.unavailable.map((v) => [v.id, v.reason]), [[v1.id, "INSUFFICIENT_CAPACITY"]]);
+    assert.deepEqual(
+      a7Body.vehicles.unavailable.map((v) => [v.id, v.reason]).sort((a, b) => Number(a[0]) - Number(b[0])),
+      [
+        [v1.id, "CATEGORY_MISMATCH"],
+        [v3.id, "INSUFFICIENT_CAPACITY"],
+      ],
+    );
     assert.deepEqual(a7Body.drivers.available.map((d) => d.id), [d1.id]);
+
+    // For standard (4 passengers): v1 is available, v2 & v3 are CATEGORY_MISMATCH
+    const availStd = await fetch(`${baseUrl}/staff/availability?journeyDate=2026-12-01&journeyTime=14:00&passengerCount=4&vehicleSize=standard`, {
+      headers: { Cookie: staffCookie },
+    });
+    const aStdBody = (await availStd.json()) as {
+      vehicles: { available: Array<{ id: number }>; unavailable: Array<{ id: number; reason: string }> };
+    };
+    assert.deepEqual(aStdBody.vehicles.available.map((v) => v.id), [v1.id]);
+    assert.ok(aStdBody.vehicles.unavailable.some((v) => v.id === v2.id && v.reason === "CATEGORY_MISMATCH"));
+    assert.ok(aStdBody.vehicles.unavailable.some((v) => v.id === v3.id && v.reason === "CATEGORY_MISMATCH"));
 
     // Insert a CONFIRMED booking at 2026-12-01 14:00 UTC assigned to v2 & d1
     const [custRows] = await conn.query<mysql.RowDataPacket[]>("SELECT id FROM customers LIMIT 1");

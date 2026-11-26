@@ -4,6 +4,7 @@ import { normalizeSearchPhone, validateSearchPhone } from "./customerSearch.js";
 import { VEHICLES } from "./bookings.js";
 
 export type ResourceStatus = "ACTIVE" | "INACTIVE";
+export type VehicleCategory = "standard" | "seven-seater";
 
 export const normalizeRegistration = (value: string): string =>
   value.trim().replace(/\s+/g, "").toUpperCase();
@@ -21,6 +22,7 @@ export const CreateVehicleBody = z.object({
     .int("Passenger capacity must be a positive whole number.")
     .min(1, "Passenger capacity must be at least 1.")
     .max(255, "Passenger capacity must be 255 or fewer."),
+  vehicleCategory: z.enum(["standard", "seven-seater"]).default("standard"),
 });
 export type CreateVehicleBody = z.infer<typeof CreateVehicleBody>;
 

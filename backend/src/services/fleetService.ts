@@ -10,6 +10,7 @@ import {
   type CreateDriverBody,
   type CreateVehicleBody,
   type ResourceStatus,
+  type VehicleCategory,
 } from "../validation/fleet.js";
 
 export interface VehicleRecord {
@@ -19,6 +20,7 @@ export interface VehicleRecord {
   model: string;
   colour: string;
   passengerCapacity: number;
+  vehicleCategory: VehicleCategory;
   status: ResourceStatus;
   createdAt: string;
 }
@@ -40,6 +42,7 @@ interface VehicleRow extends RowDataPacket {
   model: string;
   colour: string;
   passenger_capacity: number;
+  vehicle_category: VehicleCategory;
   status: ResourceStatus;
   created_at: Date;
 }
@@ -61,6 +64,7 @@ const toVehicle = (r: VehicleRow): VehicleRecord => ({
   model: r.model,
   colour: r.colour,
   passengerCapacity: r.passenger_capacity,
+  vehicleCategory: r.vehicle_category,
   status: r.status,
   createdAt: r.created_at.toISOString(),
 });
@@ -77,7 +81,7 @@ const toDriver = (r: DriverRow): DriverRecord => ({
 
 export async function listVehicles(): Promise<VehicleRecord[]> {
   const [rows] = await pool.execute<VehicleRow[]>(
-    `SELECT id, registration_number, make, model, colour, passenger_capacity, status, created_at
+    `SELECT id, registration_number, make, model, colour, passenger_capacity, vehicle_category, status, created_at
      FROM vehicles ORDER BY id DESC`,
   );
   return rows.map(toVehicle);
@@ -85,7 +89,7 @@ export async function listVehicles(): Promise<VehicleRecord[]> {
 
 export async function getVehicleById(id: number): Promise<VehicleRecord> {
   const [rows] = await pool.execute<VehicleRow[]>(
-    `SELECT id, registration_number, make, model, colour, passenger_capacity, status, created_at
+    `SELECT id, registration_number, make, model, colour, passenger_capacity, vehicle_category, status, created_at
      FROM vehicles WHERE id = ? LIMIT 1`,
     [id],
   );
@@ -102,9 +106,17 @@ export async function createVehicle(input: CreateVehicleBody): Promise<VehicleRe
 
   try {
     const [res] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO vehicles (registration_number, registration_normalized, make, model, colour, passenger_capacity, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'INACTIVE')`,
-      [input.registrationNumber.trim(), regNorm, input.make.trim(), input.model.trim(), input.colour.trim(), input.passengerCapacity],
+      `INSERT INTO vehicles (registration_number, registration_normalized, make, model, colour, passenger_capacity, vehicle_category, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'INACTIVE')`,
+      [
+        input.registrationNumber.trim(),
+        regNorm,
+        input.make.trim(),
+        input.model.trim(),
+        input.colour.trim(),
+        input.passengerCapacity,
+        input.vehicleCategory,
+      ],
     );
     return await getVehicleById(res.insertId);
   } catch (err) {

@@ -158,6 +158,7 @@ CREATE TABLE vehicles (
   model                   VARCHAR(60) NOT NULL,
   colour                  VARCHAR(40) NOT NULL,
   passenger_capacity      TINYINT UNSIGNED NOT NULL,
+  vehicle_category        ENUM('standard','seven-seater') NOT NULL DEFAULT 'standard',
   status                  ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
   created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

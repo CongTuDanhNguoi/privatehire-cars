@@ -9,7 +9,7 @@ import { listDrivers, listVehicles, type DriverRecord, type VehicleRecord } from
 
 export const SIMULATED_JOURNEY_MINUTES = 60;
 
-export type UnavailableReason = "INACTIVE" | "INSUFFICIENT_CAPACITY" | "BOOKED_OVERLAP";
+export type UnavailableReason = "INACTIVE" | "CATEGORY_MISMATCH" | "INSUFFICIENT_CAPACITY" | "BOOKED_OVERLAP";
 
 export interface UnavailableVehicle extends VehicleRecord {
   reason: UnavailableReason;
@@ -73,21 +73,23 @@ export async function checkAvailability(query: AvailabilityQuery): Promise<Avail
     if (row.assigned_driver_id !== null) busyDriverIds.add(row.assigned_driver_id);
   }
 
-  // Seven-Seater selection requires at least 5 seats in addition to requested passengerCount.
-  const minRequiredSeats =
-    query.vehicleSize === "seven-seater" ? Math.max(query.passengerCount, 5) : query.passengerCount;
-
   const availableVehicles: VehicleRecord[] = [];
   const unavailableVehicles: UnavailableVehicle[] = [];
 
   for (const v of allVehicles) {
     if (v.status !== "ACTIVE") {
       unavailableVehicles.push({ ...v, reason: "INACTIVE", reasonDetail: "Vehicle is inactive." });
-    } else if (v.passengerCapacity < minRequiredSeats) {
+    } else if (query.vehicleSize && v.vehicleCategory !== query.vehicleSize) {
+      unavailableVehicles.push({
+        ...v,
+        reason: "CATEGORY_MISMATCH",
+        reasonDetail: `Vehicle category is ${v.vehicleCategory}, requested ${query.vehicleSize}.`,
+      });
+    } else if (v.passengerCapacity < query.passengerCount) {
       unavailableVehicles.push({
         ...v,
         reason: "INSUFFICIENT_CAPACITY",
-        reasonDetail: `Capacity (${v.passengerCapacity}) is below required ${minRequiredSeats} seats.`,
+        reasonDetail: `Capacity (${v.passengerCapacity}) is below requested ${query.passengerCount} passengers.`,
       });
     } else if (busyVehicleIds.has(v.id)) {
       unavailableVehicles.push({

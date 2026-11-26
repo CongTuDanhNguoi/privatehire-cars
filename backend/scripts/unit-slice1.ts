@@ -27,16 +27,38 @@ describe("Slice 1 pricing & validation", () => {
     });
   });
 
-  it("validates vehicle fields and allows any positive whole integer capacity", () => {
-    const ok = CreateVehicleBody.safeParse({
+  it("validates vehicle fields, optional vehicleCategory defaulting to standard, and positive integer capacity", () => {
+    const omittedCat = CreateVehicleBody.safeParse({
       registrationNumber: " ab12 cde ",
       make: "Ford",
       model: "Tourneo",
       colour: "Silver",
       passengerCapacity: 8,
     });
-    assert.equal(ok.success, true);
+    assert.equal(omittedCat.success, true);
+    if (omittedCat.success) assert.equal(omittedCat.data.vehicleCategory, "standard");
     assert.equal(normalizeRegistration(" ab12 cde "), "AB12CDE");
+
+    const explicitSeven = CreateVehicleBody.safeParse({
+      registrationNumber: "XY99 MPV",
+      make: "Ford",
+      model: "Galaxy",
+      colour: "Blue",
+      passengerCapacity: 7,
+      vehicleCategory: "seven-seater",
+    });
+    assert.equal(explicitSeven.success, true);
+    if (explicitSeven.success) assert.equal(explicitSeven.data.vehicleCategory, "seven-seater");
+
+    const badCat = CreateVehicleBody.safeParse({
+      registrationNumber: "XY99 MPV",
+      make: "Ford",
+      model: "Galaxy",
+      colour: "Blue",
+      passengerCapacity: 7,
+      vehicleCategory: "limousine",
+    });
+    assert.equal(badCat.success, false);
 
     for (const badCap of [0, -2, 4.5]) {
       const bad = CreateVehicleBody.safeParse({

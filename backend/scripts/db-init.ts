@@ -96,9 +96,20 @@ async function upgradeFleetAndAvailability() {
       model                   VARCHAR(60) NOT NULL,
       colour                  VARCHAR(40) NOT NULL,
       passenger_capacity      TINYINT UNSIGNED NOT NULL,
+      vehicle_category        ENUM('standard','seven-seater') NOT NULL DEFAULT 'standard',
       status                  ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
       created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+  const [vCatCols] = await conn.query<RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'vehicles' AND column_name = 'vehicle_category'",
+    [name],
+  );
+  if (vCatCols.length === 0) {
+    await conn.query(
+      "ALTER TABLE vehicles ADD COLUMN vehicle_category ENUM('standard','seven-seater') NOT NULL DEFAULT 'standard' AFTER passenger_capacity",
+    );
+  }
 
   await conn.query(`CREATE TABLE IF NOT EXISTS drivers (
       id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
