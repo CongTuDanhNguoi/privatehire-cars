@@ -21,6 +21,7 @@ const EnvSchema = z.object({
     .min(32, "must be at least 32 characters")
     .refine((v) => v !== PLACEHOLDER_SECRET, "still has the example value — set a long random string"),
   SESSION_HOURS: z.coerce.number().positive().max(24 * 30).default(8),
+  CALLER_OTP_SIMULATION: z.enum(["true", "false"]).default("false"),
 
   EMAIL_PROVIDER: z.enum(["MOCK", "EMAILJS"]).default("MOCK"),
   EMAIL_TEST_MODE: z.enum(["true", "false"]).default("true"),
@@ -76,6 +77,7 @@ function loadConfig() {
       database: env.DB_NAME,
     },
     jwtSecret: env.JWT_SECRET,
+    callerOtpSimulation: env.CALLER_OTP_SIMULATION === "true",
     sessionHours: env.SESSION_HOURS,
     email: {
       provider: env.EMAIL_PROVIDER,

@@ -12,6 +12,8 @@ import { AppShell } from "./components/layout/AppShell";
 import { FullPageSpinner } from "./components/ui/Spinner";
 import { ToastProvider } from "./components/ui/Toast";
 import EnquiryDetailPage from "./pages/EnquiryDetailPage";
+import CustomerSearchPage from "./pages/CustomerSearchPage";
+import NewCustomerEntryPage from "./pages/NewCustomerEntryPage";
 import InboxPage from "./pages/InboxPage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -59,6 +61,8 @@ const routes: RouteObject[] = [
         children: [
           { path: "/enquiries", element: <InboxPage /> },
           { path: "/enquiries/:id", element: <EnquiryDetailPage /> },
+          { path: "/customers", element: <CustomerSearchPage /> },
+          { path: "/customers/new", element: <NewCustomerEntryPage /> },
           { path: "*", element: <FallbackRoute /> },
         ],
       },

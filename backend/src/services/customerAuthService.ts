@@ -7,6 +7,7 @@ import { LOGIN_MESSAGES, validateLogin } from "../../../app/src/validation/login
 import { OTP_MESSAGES } from "../../../app/src/validation/otpValidation";
 import type { LoginBody, RegisterBody } from "../validation/auth.js";
 import { clearAttempts, normalizeEmail, recordFailedAttempt } from "./loginAttempts.js";
+import { normalizeSearchPhone } from "../validation/customerSearch.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 
 export interface CustomerUser {
@@ -53,12 +54,13 @@ export async function registerCustomer(form: RegisterBody): Promise<{ id: number
   let id: number;
   try {
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO customers (full_name, email, phone, phone_normalized, home_address, card_last4, password_hash)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         user.fullName,
         user.email,
         form.phone.trim(),
+        normalizeSearchPhone(form.phone) || null,
         form.homeAddress.trim(),
         // Never store the full card number, the CVV or the cardholder name — only the last 4 digits.
         form.cardNumber.replace(/\D/g, "").slice(-4),

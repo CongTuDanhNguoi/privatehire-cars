@@ -7,5 +7,6 @@ export const requireStaff: RequestHandler = (req, res, next) => {
   const session = readSession(req, "staff");
   if (!session) throw new AppError("UNAUTHENTICATED", "Your session has expired. Please sign in again.");
   res.locals.staffId = session.id;
+  res.locals.sessionIssuedAt = session.issuedAt;
   next();
 };

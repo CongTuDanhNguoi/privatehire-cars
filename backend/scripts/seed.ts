@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import bcrypt from "bcryptjs";
 import type { Connection, ResultSetHeader } from "mysql2/promise";
+import { normalizeSearchPhone } from "../src/validation/customerSearch.js";
 import { connect, dbName, toSqlDateTime } from "./connect.js";
 
 const BCRYPT_COST = 10;
@@ -120,8 +121,8 @@ export async function seedDatabase(conn: Connection, { demo = false }: { demo?: 
     const email = c.email.trim().toLowerCase();
     const [r] = await conn.execute<ResultSetHeader>(
       // Demo customers count as already verified.
-      "INSERT INTO customers (full_name, email, phone, home_address, card_last4, password_hash, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())",
-      [c.fullName, email, c.phone, c.homeAddress, c.cardLast4, hash],
+      "INSERT INTO customers (full_name, email, phone, phone_normalized, home_address, card_last4, password_hash, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())",
+      [c.fullName, email, c.phone, normalizeSearchPhone(c.phone) || null, c.homeAddress, c.cardLast4, hash],
     );
     customerIds.set(c.key, { id: r.insertId, email });
   }

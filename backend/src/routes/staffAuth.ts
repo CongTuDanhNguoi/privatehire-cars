@@ -4,7 +4,8 @@ import { AppError } from "../errors.js";
 import { loginRateLimit } from "../middleware/loginRateLimit.js";
 import { requireStaff } from "../middleware/requireStaff.js";
 import { authenticateStaff, findStaff } from "../services/staffAuthService.js";
-import { endSession, startSession } from "../services/session.js";
+import { callerVerificationStore } from "../services/callerVerificationService.js";
+import { endSession, readSession, startSession } from "../services/session.js";
 import { LoginBody, STAFF_LOGIN_MESSAGES, parseInput } from "../validation/auth.js";
 
 export const staffAuthRouter = Router();
@@ -15,7 +16,9 @@ staffAuthRouter.post("/login", loginRateLimit("STAFF", STAFF_LOGIN_MESSAGES.lock
   res.json({ staff });
 });
 
-staffAuthRouter.post("/logout", (_req, res) => {
+staffAuthRouter.post("/logout", async (req, res) => {
+  const session = readSession(req, "staff");
+  if (session) await callerVerificationStore.clearVerification(session.id);
   endSession(res, "staff");
   res.status(204).end();
 });
