@@ -86,6 +86,55 @@ async function upgradeCallerVerifications() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 }
 
+// SCRUM-109 Slice 1 additive upgrade: creates vehicles, drivers, and booking assignment/journey_status columns.
+async function upgradeFleetAndAvailability() {
+  await conn.query(`CREATE TABLE IF NOT EXISTS vehicles (
+      id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      registration_number     VARCHAR(20) NOT NULL,
+      registration_normalized VARCHAR(20) NOT NULL UNIQUE,
+      make                    VARCHAR(60) NOT NULL,
+      model                   VARCHAR(60) NOT NULL,
+      colour                  VARCHAR(40) NOT NULL,
+      passenger_capacity      TINYINT UNSIGNED NOT NULL,
+      vehicle_category        ENUM('standard','seven-seater') NOT NULL DEFAULT 'standard',
+      status                  ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
+      created_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+  const [vCatCols] = await conn.query<RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'vehicles' AND column_name = 'vehicle_category'",
+    [name],
+  );
+  if (vCatCols.length === 0) {
+    await conn.query(
+      "ALTER TABLE vehicles ADD COLUMN vehicle_category ENUM('standard','seven-seater') NOT NULL DEFAULT 'standard' AFTER passenger_capacity",
+    );
+  }
+
+  await conn.query(`CREATE TABLE IF NOT EXISTS drivers (
+      id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      full_name          VARCHAR(100) NOT NULL,
+      phone              VARCHAR(30)  NOT NULL,
+      phone_normalized   VARCHAR(30)  NOT NULL,
+      email              VARCHAR(254) NOT NULL,
+      licence_number     VARCHAR(40)  NOT NULL,
+      licence_normalized VARCHAR(40)  NOT NULL UNIQUE,
+      status             ENUM('ACTIVE','INACTIVE') NOT NULL DEFAULT 'INACTIVE',
+      created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+  const [cols] = await conn.query<RowDataPacket[]>(
+    "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = 'bookings' AND column_name = 'journey_status'",
+    [name],
+  );
+  if (cols.length === 0) {
+    await conn.query(`ALTER TABLE bookings
+      ADD COLUMN journey_status ENUM('CONFIRMED','CANCELLED','COMPLETED') NOT NULL DEFAULT 'CONFIRMED' AFTER status,
+      ADD COLUMN assigned_vehicle_id INT UNSIGNED NULL AFTER journey_status,
+      ADD COLUMN assigned_driver_id INT UNSIGNED NULL AFTER assigned_vehicle_id`);
+  }
+}
+
 try {
   await conn.query(`CREATE DATABASE IF NOT EXISTS \`${name}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
   await conn.changeUser({ database: name });
@@ -98,6 +147,7 @@ try {
     await upgradeEmailVerification();
     await upgradeCustomerPhoneNormalized();
     await upgradeCallerVerifications();
+    await upgradeFleetAndAvailability();
   } else {
     const schema = await readFile(path.join(BE_ROOT, "sql", "001_schema.sql"), "utf8");
     await conn.query(schema);

@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { after, before, describe, it } from "node:test";
+import { after, before, beforeEach, describe, it } from "node:test";
 import jwt from "jsonwebtoken";
 import mysql from "mysql2/promise";
 import { config } from "../src/config.js";
@@ -98,6 +98,10 @@ describe("SCRUM-107 Live MySQL & Express API Integration (scenarios 1-16)", () =
     await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
     await conn.end();
     await pool.end();
+  });
+
+  beforeEach(async () => {
+    await conn.execute("DELETE FROM caller_verifications WHERE staff_id = 1");
   });
 
   it("1, 10, 11: Correct OTP unlocks profile & only that customer's bookings", async () => {
@@ -208,12 +212,24 @@ describe("SCRUM-107 Live MySQL & Express API Integration (scenarios 1-16)", () =
       method: "POST",
       headers: { Cookie: staffCookie },
     });
+    assert.equal(s1.status, 200);
     const { simulatedCode: oldCode } = (await s1.json()) as { simulatedCode: string };
+
+    // Immediate resend within 60s cooldown returns 429 TOO_MANY_REQUESTS
+    const tooSoon = await fetch(`${baseUrl}/staff/customers/${alexId}/otp/send`, {
+      method: "POST",
+      headers: { Cookie: staffCookie },
+    });
+    assert.equal(tooSoon.status, 429);
+
+    // Deterministically advance past 60s cooldown in isolated test DB
+    await conn.execute("UPDATE caller_verifications SET expires_at = expires_at - INTERVAL 61 SECOND WHERE staff_id = 1");
 
     const s2 = await fetch(`${baseUrl}/staff/customers/${alexId}/otp/send`, {
       method: "POST",
       headers: { Cookie: staffCookie },
     });
+    assert.equal(s2.status, 200);
     const { simulatedCode: newCode } = (await s2.json()) as { simulatedCode: string };
 
     // 6: Cannot verify Emily using Alex's OTP
@@ -258,10 +274,12 @@ describe("SCRUM-107 Live MySQL & Express API Integration (scenarios 1-16)", () =
     assert.equal(alexAfterSwitch.status, 403);
 
     // 8: Logout clears verification
+    await conn.execute("UPDATE caller_verifications SET expires_at = expires_at - INTERVAL 61 SECOND WHERE staff_id = 1");
     const s = await fetch(`${baseUrl}/staff/customers/${alexId}/otp/send`, {
       method: "POST",
       headers: { Cookie: staffCookie },
     });
+    assert.equal(s.status, 200);
     const { simulatedCode } = (await s.json()) as { simulatedCode: string };
     await fetch(`${baseUrl}/staff/customers/${alexId}/otp/verify`, {
       method: "POST",
